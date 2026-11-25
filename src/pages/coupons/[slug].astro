@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import CouponCard from '../../components/CouponCard.astro';
+import PlanTable from '../../components/PlanTable.astro';
+import BrandMark from '../../components/BrandMark.astro';
+import { ALL_BRANDS, getBrandBySlug } from '../../data/brands';
+import { getPlansByBrand } from '../../data/plans';
+import { buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from '../../utils/schema';
+
+export function getStaticPaths() {
+  return ALL_BRANDS.map((b) => ({ params: { slug: b.slug } }));
+}
+
+const { slug } = Astro.params;
+const brand = getBrandBySlug(slug!);
+if (!brand) throw new Error(`Unknown brand slug: ${slug}`);
+
+const brandCoupons = brand.coupons.map((c) => ({
+  ...c,
+  brandAffLink: brand.affLink,
+  brandRank: 0,
+  brandTagline: brand.tagline,
+}));
+const activeCoupons = brandCoupons.filter((c) => c.status !== 'historical');
+const histCoupons = brandCoupons.filter((c) => c.status === 'historical');
+const brandPlans = getPlansByBrand(brand.slug);
+const eligiblePlans = brandPlans.filter((p) => p.metrics.hasConfirmedDiscount);
+
+const breadcrumbs = [
+  { label: '首页', href: '/' },
+  { label: '优惠码中心', href: '/coupons/' },
+  { label: `${brand.name}优惠码` },
+];
+
+const primaryCode = activeCoupons[0]?.code ?? '';
+const title = `${brand.name}优惠码 ${primaryCode}｜2026最新折扣活动与使用规则｜机场优惠`;
+const description = `查看${brand.name}（${brand.englishName}）最新收录优惠码 ${primaryCode}、折扣力度、适用套餐、排除限制与操作步骤，并对比各付款周期折后参考价。`;
+
+const schemas: Record<string, unknown>[] = [
+  buildWebPageSchema({
+    title,
+    description,
+    path: `/coupons/${brand.slug}/`,
+    dateModified: brand.lastUpdatedDate,
+  }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+const faqSchema = buildFaqSchema(brand.faqs.slice(0, 5));
+if (faqSchema) schemas.push(faqSchema);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalPath={`/coupons/${brand.slug}/`}
+  schemas={schemas}
+>
+  <section class="bg-band-coupons py-10 sm:py-14 border-b border-slate-200/80">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <div class="flex items-start gap-4">
+        <BrandMark slug={brand.slug} name={brand.name} size="lg" />
+        <div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold text-[#102343] mb-2">
+            {brand.name}优惠码与折扣规则（{primaryCode}）
+          </h1>
+          <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+            {brand.tagline}。本页汇总 {brand.name} 的优惠码原文、适用套餐边界、使用限制与购买流程，实际减免请以官方结算页面显示为准。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <!-- Active / Recorded Coupons -->
+      <div>
+        <h2 class="text-xl font-bold text-[#102343] mb-4">当前收录优惠码</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {activeCoupons.map((coupon) => (
+            <CouponCard coupon={coupon} />
+          ))}
+        </div>
+      </div>
+
+      <!-- How to use steps -->
+      {activeCoupons[0] && (
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-6">
+          <h2 class="text-lg font-bold text-[#102343] mb-3">
+            {brand.name}优惠码（{activeCoupons[0].code}）使用步骤与注意事项
+          </h2>
+          <ol class="list-decimal pl-5 space-y-2 text-sm text-slate-700 mb-4">
+            {activeCoupons[0].howToUse.map((step) => (
+              <li>{step}</li>
+            ))}
+          </ol>
+          <p class="text-xs text-slate-600">
+            <strong>适用说明：</strong>
+            {activeCoupons[0].evidenceNote}
+          </p>
+        </div>
+      )}
+
+      <!-- Discounted Plans if Calculable -->
+      {eligiblePlans.length > 0 && (
+        <div>
+          <h2 class="text-xl font-bold text-[#102343] mb-2">
+            可使用 {activeCoupons[0].code} 的套餐折后价格明细
+          </h2>
+          <p class="text-sm text-slate-600 mb-4">
+            以下套餐依据公开折扣比例计算得出折后参考金额，排除年付轻量包、一次性流量包及独享定制档。
+          </p>
+          <PlanTable plans={eligiblePlans} showBrandColumn={false} />
+        </div>
+      )}
+
+      <!-- Full Plans Reference -->
+      <div>
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <h2 class="text-xl font-bold text-[#102343]">{brand.name}全部套餐原价与规则</h2>
+          <a href={`/plans/${brand.slug}/`} class="text-sm font-semibold text-emerald-700 hover:underline">
+            独立套餐页 →
+          </a>
+        </div>
+        <PlanTable plans={brandPlans} showBrandColumn={false} />
+      </div>
+
+      <!-- Historical Coupons if any -->
+      {histCoupons.length > 0 && (
+        <div class="pt-6 border-t border-slate-200">
+          <h2 class="text-lg font-bold text-[#102343] mb-3">历史活动归档（已结束）</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {histCoupons.map((coupon) => (
+              <CouponCard coupon={coupon} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- Navigation back to Brand Hub -->
+      <div class="p-6 rounded-2xl bg-[#102343] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-white mb-1">想深入了解 {brand.name} 的客户端、线路与售后条款？</h2>
+          <p class="text-xs text-slate-300">阅读完整的 {brand.name} 品牌深度分析页，包含避坑提示与常见问题解答。</p>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <a
+            href={`/brands/${brand.slug}/`}
+            class="px-4 py-2.5 rounded-xl bg-white text-[#102343] text-xs font-bold min-h-[44px] inline-flex items-center"
+          >
+            阅读品牌主页
+          </a>
+          <a
+            href={brand.affLink}
+            target="_blank"
+            rel="sponsored nofollow noopener noreferrer"
+            class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold min-h-[44px] inline-flex items-center"
+          >
+            前往 {brand.name} 官网
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

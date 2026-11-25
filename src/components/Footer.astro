@@ -1,0 +1,67 @@
+---
+import { SITE_CONFIG } from '../data/site-config';
+import SiteLogo from './SiteLogo.astro';
+---
+
+<footer class="bg-band-footer text-slate-300 border-t border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+      <div class="lg:col-span-1">
+        <a href="/" class="inline-flex items-center gap-2.5 mb-4">
+          <SiteLogo size={34} dark={true} />
+          <span class="flex flex-col leading-tight">
+            <span class="text-lg font-bold text-white">机场优惠</span>
+            <span class="text-xs text-slate-400">Airport Deals · jichangyouhui.blog</span>
+          </span>
+        </a>
+        <p class="text-sm text-slate-300/90 leading-relaxed mb-4">
+          专注简体中文用户的机场优惠码、套餐价格对比、折后月均成本测算与购买注意事项分析博客。
+        </p>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          本站仅收录公开可追溯资料与用户提交档案，不做虚构测速或虚假体验排名。
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-3.5">核心栏目</h3>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="/coupons/" class="hover:text-emerald-400 transition-colors">机场优惠码中心</a></li>
+          <li><a href="/brands/" class="hover:text-emerald-400 transition-colors">19 家机场品牌大全</a></li>
+          <li><a href="/comparison/" class="hover:text-emerald-400 transition-colors">全站套餐价格对比</a></li>
+          <li><a href="/cheap-airports/" class="hover:text-emerald-400 transition-colors">便宜机场与预算筛选</a></li>
+          <li><a href="/annual-deals/" class="hover:text-emerald-400 transition-colors">年付优惠套餐专区</a></li>
+          <li><a href="/best-value/" class="hover:text-emerald-400 transition-colors">性价比套餐分析</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-3.5">攻略与专题</h3>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="/guides/" class="hover:text-emerald-400 transition-colors">购买攻略指南</a></li>
+          <li><a href="/guides/how-to-use-coupon/" class="hover:text-emerald-400 transition-colors">优惠码使用完整教程</a></li>
+          <li><a href="/articles/" class="hover:text-emerald-400 transition-colors">深度专题文章库</a></li>
+          <li><a href="/search/" class="hover:text-emerald-400 transition-colors">全站中文搜索</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-3.5">合规与编辑原则</h3>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="/about/" class="hover:text-emerald-400 transition-colors">关于本站</a></li>
+          <li><a href="/editorial-policy/" class="hover:text-emerald-400 transition-colors">编辑原则与资料来源</a></li>
+          <li><a href="/affiliate-disclosure/" class="hover:text-emerald-400 transition-colors">商业推广披露说明</a></li>
+          <li><a href="/privacy/" class="hover:text-emerald-400 transition-colors">隐私政策</a></li>
+          <li><a href="/contact/" class="hover:text-emerald-400 transition-colors">联系与价格纠错</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-10 pt-8 border-t border-slate-700/70 space-y-3 text-xs text-slate-400">
+      <p>{SITE_CONFIG.disclosureShort}</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p>© {SITE_CONFIG.currentYear} 机场优惠（Airport Deals）· https://jichangyouhui.blog</p>
+        <p>联系与优惠失效反馈：<a href={`mailto:${SITE_CONFIG.email}`} class="text-emerald-400 hover:underline">{SITE_CONFIG.email}</a></p>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { ALL_BRANDS } from '../data/brands';
+import { ALL_PLANS } from '../data/plans';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '关于本站' }];
+const title = '关于机场优惠（Airport Deals）｜站点定位与核心功能｜机场优惠';
+const description =
+  '了解机场优惠（jichangyouhui.blog）的定位：专注于简体中文用户的机场优惠码汇总、全周期套餐价格计算与购买决策参考博客。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/about/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/about/" schemas={schemas}>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">关于机场优惠（Airport Deals）</h1>
+      <p class="text-base text-slate-600 leading-relaxed">
+        机场优惠（https://jichangyouhui.blog）是一个专注于机场优惠资讯、套餐价格结构拆解与购买注意事项的商业资讯博客。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed">
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">我们做什么</h2>
+        <p>
+          目前站内已建立起覆盖 <strong>{ALL_BRANDS.length}</strong> 家机场品牌、<strong>{ALL_PLANS.length}</strong> 档套餐记录的统一价格数据库。我们通过统一数学口径计算月均成本、每 GB 成本以及已核实优惠码的实际折后金额，帮助读者在注册购买前对比月付、季付、年付及一次性流量包的真实账面支出。
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">我们不做什么</h2>
+        <ul class="list-disc pl-5 space-y-2">
+          <li>本站<strong>不冒充</strong>任何机场品牌的官方网站或官方客服。</li>
+          <li>本站<strong>不制作</strong>虚构测速报告、节点延迟对比、晚高峰实测或伪造用户评价。</li>
+          <li>本站<strong>不把商业展示顺序伪装成客观性能排名</strong>。</li>
+          <li>对于未公布明确折扣比例的优惠码，本站不强行推算折后价，而是引导读者以官方结算页为准。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

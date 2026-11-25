@@ -1,0 +1,125 @@
+---
+import type { CouponWithBrandMeta } from '../data/brands';
+import BrandMark from './BrandMark.astro';
+
+interface Props {
+  coupon: CouponWithBrandMeta;
+  compact?: boolean;
+}
+
+const { coupon, compact = false } = Astro.props;
+const isHistorical = coupon.status === 'historical';
+const isCalculable = coupon.status === 'active' && coupon.calculable;
+---
+
+<article
+  class={`bento-card p-5 flex flex-col justify-between gap-4 ${
+    isHistorical ? 'bg-slate-50/90 border-slate-200/90 opacity-90' : ''
+  }`}
+>
+  <div class="space-y-3">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <BrandMark slug={coupon.brandSlug} name={coupon.brandName} size="sm" />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <a
+              href={`/brands/${coupon.brandSlug}/`}
+              class="font-bold text-base text-[#102343] hover:text-emerald-700 transition-colors"
+            >
+              {coupon.brandName}
+            </a>
+            {isHistorical ? (
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-700">
+                活动已结束
+              </span>
+            ) : isCalculable ? (
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {coupon.discountLabel}
+              </span>
+            ) : (
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                收录优惠码
+              </span>
+            )}
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">{coupon.activityName}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coupon Code Box -->
+    <div class="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-dashed border-slate-300">
+      <div class="min-w-0">
+        <span class="block text-[11px] text-slate-500">优惠码原文</span>
+        <code class="text-base font-bold tracking-wider text-[#102343] break-all">
+          {coupon.code}
+        </code>
+      </div>
+      {!isHistorical && (
+        <button
+          type="button"
+          data-copy-code={coupon.code}
+          class="px-3.5 py-2 rounded-lg bg-[#102343] hover:bg-slate-800 text-white text-xs font-semibold transition-colors shrink-0 min-h-[40px]"
+        >
+          复制优惠码
+        </button>
+      )}
+    </div>
+
+    <!-- Details -->
+    <dl class="space-y-1.5 text-xs text-slate-600">
+      <div class="flex gap-2">
+        <dt class="text-slate-400 shrink-0">折扣说明：</dt>
+        <dd class="text-slate-700 font-medium">{coupon.discountLabel}</dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="text-slate-400 shrink-0">适用套餐：</dt>
+        <dd>{coupon.applicablePlansText}</dd>
+      </div>
+      {!compact && (
+        <>
+          <div class="flex gap-2">
+            <dt class="text-slate-400 shrink-0">使用限制：</dt>
+            <dd>{coupon.userEligibility}；{coupon.stackableNote}</dd>
+          </div>
+          <div class="flex gap-2">
+            <dt class="text-slate-400 shrink-0">日期与依据：</dt>
+            <dd>{coupon.validPeriodText}</dd>
+          </div>
+        </>
+      )}
+      {coupon.conflictNote && (
+        <div class="flex gap-2 text-amber-700 bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200/70">
+          <dt class="shrink-0 font-semibold">口径提醒：</dt>
+          <dd>{coupon.conflictNote}</dd>
+        </div>
+      )}
+    </dl>
+  </div>
+
+  <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+    {!isHistorical && (
+      <a
+        href={coupon.brandAffLink}
+        target="_blank"
+        rel="sponsored nofollow noopener noreferrer"
+        class="flex-1 min-w-[120px] inline-flex items-center justify-center px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors min-h-[44px]"
+      >
+        前往购买（含推广）
+      </a>
+    )}
+    <a
+      href={`/coupons/${coupon.brandSlug}/`}
+      class="inline-flex items-center justify-center px-3 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 text-xs font-medium transition-colors min-h-[44px]"
+    >
+      用码细则
+    </a>
+    <a
+      href={`/brands/${coupon.brandSlug}/`}
+      class="inline-flex items-center justify-center px-3 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-[#102343] text-xs font-medium transition-colors min-h-[44px]"
+    >
+      阅读品牌详情
+    </a>
+  </div>
+</article>

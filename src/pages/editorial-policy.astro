@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '编辑原则与资料来源' }];
+const title = '编辑原则、价格计算规则与资料核实规范｜机场优惠';
+const description =
+  '公开机场优惠（jichangyouhui.blog）的内容审核规范、折扣计算公式、品牌排序定义与历史资料版本冲突处理方式。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/editorial-policy/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/editorial-policy/" schemas={schemas}>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">编辑原则与资料核实规范</h1>
+      <p class="text-base text-slate-600 leading-relaxed">
+        为保证价格对比、优惠码说明与购买攻略的长期可信度，全站所有页面均执行以下统一编辑准则。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed">
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">1. 统一数据来源与数学计算规则</h2>
+        <ul class="list-disc pl-5 space-y-2">
+          <li>所有品牌页面、对比表和优惠卡片均从同一数据文件读取价格，避免多处手工录入导致数字矛盾。</li>
+          <li><strong>折后价格</strong> = 整期原价 × 实付比例（仅对已证实折扣率且不属排除名单的套餐计算）。</li>
+          <li><strong>平均月成本</strong> = 整期应付金额 ÷ 付款周期月数；一次性不限时流量包不折算月均价。</li>
+          <li><strong>每 GB 成本</strong> = 整期实付金额 ÷ 整期可获得流量（按月重置的年付套餐按 12 个月配额累计）。</li>
+        </ul>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">2. 品牌排序性质</h2>
+        <p>
+          站内 1–19 家品牌的展示顺序属于「编辑精选展示顺序」，结合了用户提交资料的完整度与档位代表性，不代表网络速度、可用率或长期稳定性的客观排名。
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">3. 资料冲突与缺失处理</h2>
+        <p>
+          当不同日期的公开资料或后台截图出现流量、价格或客户端规则差异时，本站会在对应品牌主页与套餐页明示版本记录日期及冲突说明；未提供对应信息的字段则直接省略，不使用占位文字或 AI 推测填充。
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

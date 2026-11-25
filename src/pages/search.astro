@@ -1,0 +1,276 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { ALL_BRANDS } from '../data/brands/index';
+---
+
+<BaseLayout
+  title="全站中文搜索｜机场品牌、优惠码与套餐价格检索｜机场优惠"
+  description="搜索机场优惠全站收录的 19 家机场品牌、优惠码、套餐方案与深度购买攻略文章，支持中文关键词、品牌别名与同义词匹配。"
+  canonicalPath="/search/"
+  noindex={true}
+>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={[{ label: '首页', href: '/' }, { label: '全站搜索' }]} />
+
+      <h1 class="text-2xl sm:text-4xl font-extrabold text-[#102343] mb-3">
+        全站中文搜索
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 mb-6">
+        支持搜索品牌名称、别名、优惠码、套餐流量（如 100GB、不限时流量）、客户端（Clash、Shadowrocket）及应用场景（ChatGPT、Netflix、海外办公）。
+      </p>
+
+      <form
+        id="page-search-form"
+        action="/search/"
+        method="get"
+        class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2 mb-4"
+        role="search"
+      >
+        <input
+          type="search"
+          name="q"
+          id="page-search-input"
+          placeholder="输入关键词，例如：灵动云、大佬云、优惠码、便宜机场、年付、100GB、不限时流量、ChatGPT..."
+          class="flex-1 px-4 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none min-h-[44px]"
+        />
+        <button
+          type="submit"
+          class="px-6 py-2.5 rounded-xl bg-[#102343] hover:bg-slate-800 text-white text-sm font-semibold min-h-[44px]"
+        >
+          立即搜索
+        </button>
+      </form>
+
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="text-slate-500">常用关键词：</span>
+        {[
+          '灵动云',
+          '大佬云',
+          '优惠码',
+          '机场优惠',
+          '便宜机场',
+          '年付',
+          '100GB',
+          '不限时流量',
+          'ChatGPT',
+          'Netflix',
+          'Clash',
+          '科学上网',
+          '魔法上网',
+        ].map((kw) => (
+          <a
+            href={`/search/?q=${encodeURIComponent(kw)}`}
+            class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-emerald-300 text-slate-700 font-medium"
+          >
+            {kw}
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 bg-[#F8FAFC]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Category filter pills -->
+      <div id="search-category-tabs" class="flex flex-wrap gap-2 mb-6">
+        {[
+          { key: 'all', label: '全部结果' },
+          { key: 'brand', label: '机场品牌' },
+          { key: 'coupon', label: '优惠码' },
+          { key: 'plan', label: '套餐方案' },
+          { key: 'article', label: '深度文章' },
+          { key: 'guide', label: '购买攻略' },
+        ].map((tab) => (
+          <button
+            type="button"
+            data-search-cat={tab.key}
+            class={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors min-h-[40px] ${
+              tab.key === 'all'
+                ? 'bg-[#102343] text-white border-[#102343]'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div id="search-status" class="text-sm text-slate-600 mb-4">
+        请输入关键词开始检索，或点击上方常用词快速查找。
+      </div>
+
+      <div id="search-results-list" class="space-y-4"></div>
+      <div id="search-pagination" class="mt-8 flex items-center justify-center gap-2"></div>
+
+      <!-- Fallback recommendation section -->
+      <div id="search-fallback" class="mt-10 bg-white rounded-2xl border border-slate-200 p-6">
+        <h2 class="text-lg font-bold text-[#102343] mb-3">推荐栏目与热门品牌入口</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 text-sm">
+          <a href="/coupons/" class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 font-semibold text-emerald-900">
+            优惠码中心（19 家品牌）→
+          </a>
+          <a href="/comparison/" class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-[#102343]">
+            全站套餐价格对比表 →
+          </a>
+          <a href="/cheap-airports/" class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 font-semibold text-indigo-900">
+            便宜机场与年付推荐 →
+          </a>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {ALL_BRANDS.map((b) => (
+            <a
+              href={`/brands/${b.slug}/`}
+              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700"
+            >
+              {b.name}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    import { escapeHtml, highlightText, loadSearchIndex, runSearch, type SearchMatch } from '../utils/search-client';
+
+    const input = document.getElementById('page-search-input') as HTMLInputElement | null;
+    const form = document.getElementById('page-search-form') as HTMLFormElement | null;
+    const statusEl = document.getElementById('search-status');
+    const listEl = document.getElementById('search-results-list');
+    const paginationEl = document.getElementById('search-pagination');
+    const catTabs = document.querySelectorAll<HTMLButtonElement>('[data-search-cat]');
+
+    let currentQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+    let currentCat = 'all';
+    let currentPage = 1;
+    const PAGE_SIZE = 12;
+
+    if (input && currentQuery) {
+      input.value = currentQuery;
+    }
+
+    function renderResults(allMatches: SearchMatch[]) {
+      if (!listEl || !statusEl || !paginationEl) return;
+
+      const filtered =
+        currentCat === 'all'
+          ? allMatches
+          : allMatches.filter((m) => m.doc.type === currentCat);
+
+      if (!currentQuery.trim()) {
+        statusEl.textContent = '请输入关键词开始检索，或点击上方常用词快速查找。';
+        listEl.innerHTML = '';
+        paginationEl.innerHTML = '';
+        return;
+      }
+
+      if (!filtered.length) {
+        statusEl.innerHTML = `未找到与「<strong>${escapeHtml(currentQuery)}</strong>」直接匹配的内容${
+          currentCat !== 'all' ? '（可尝试切换回“全部结果”）' : ''
+        }，请参考下方推荐栏目或尝试其他关键词。`;
+        listEl.innerHTML = '';
+        paginationEl.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+      if (currentPage > totalPages) currentPage = 1;
+      const slice = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+      statusEl.innerHTML = `共找到 <strong>${filtered.length}</strong> 条与「<strong>${escapeHtml(
+        currentQuery
+      )}</strong>」相关的结果（第 ${currentPage} / ${totalPages} 页）`;
+
+      listEl.innerHTML = slice
+        .map(
+          ({ doc }) => `
+          <article class="bento-card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+                  ${escapeHtml(doc.typeLabel)}
+                </span>
+                <span class="text-xs text-slate-500">${escapeHtml(doc.category)}</span>
+              </div>
+              ${
+                doc.couponCodes && doc.couponCodes.length
+                  ? `<span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">优惠码：${escapeHtml(
+                      doc.couponCodes.join(', ')
+                    )}</span>`
+                  : ''
+              }
+            </div>
+            <h2 class="text-lg font-bold text-[#102343] mb-1.5">
+              <a href="${escapeHtml(doc.url)}" class="hover:text-emerald-700 transition-colors">
+                ${highlightText(doc.title, currentQuery)}
+              </a>
+            </h2>
+            <p class="text-sm text-slate-600 leading-relaxed mb-3">
+              ${highlightText(doc.summary, currentQuery)}
+            </p>
+            <a href="${escapeHtml(doc.url)}" class="text-xs font-semibold text-[#102343] hover:text-emerald-700">
+              进入页面查看详情 →
+            </a>
+          </article>`
+        )
+        .join('');
+
+      if (totalPages > 1) {
+        let pagesHtml = '';
+        for (let p = 1; p <= totalPages; p++) {
+          pagesHtml += `<button type="button" data-page="${p}" class="px-3.5 py-2 rounded-lg text-xs font-semibold border min-h-[40px] ${
+            p === currentPage
+              ? 'bg-[#102343] text-white border-[#102343]'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+          }">${p}</button>`;
+        }
+        paginationEl.innerHTML = pagesHtml;
+      } else {
+        paginationEl.innerHTML = '';
+      }
+    }
+
+    async function executeSearch() {
+      const docs = await loadSearchIndex();
+      const matches = runSearch(docs, currentQuery);
+      renderResults(matches);
+    }
+
+    catTabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentCat = btn.getAttribute('data-search-cat') ?? 'all';
+        currentPage = 1;
+        catTabs.forEach((b) => {
+          const active = b === btn;
+          b.className = `px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors min-h-[40px] ${
+            active
+              ? 'bg-[#102343] text-white border-[#102343]'
+              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+          }`;
+        });
+        executeSearch();
+      });
+    });
+
+    paginationEl?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-page]');
+      if (!btn) return;
+      currentPage = Number(btn.getAttribute('data-page') ?? '1');
+      executeSearch();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentQuery = input?.value.trim() ?? '';
+      currentPage = 1;
+      const nextUrl = currentQuery ? `/search/?q=${encodeURIComponent(currentQuery)}` : '/search/';
+      window.history.replaceState(null, '', nextUrl);
+      executeSearch();
+    });
+
+    executeSearch();
+  </script>
+</BaseLayout>

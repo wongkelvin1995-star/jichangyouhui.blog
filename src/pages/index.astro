@@ -1,0 +1,608 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BrandCard from '../components/BrandCard.astro';
+import CouponCard from '../components/CouponCard.astro';
+import PlanTable from '../components/PlanTable.astro';
+import { SITE_CONFIG } from '../data/site-config';
+import {
+  ALL_BRANDS,
+  ACTIVE_CALCULABLE_COUPONS,
+  HOME_FEATURED_BRANDS,
+  RECORDED_COUPONS,
+} from '../data/brands';
+import { ALL_PLANS, getPlansByBudgetTier } from '../data/plans';
+import { formatYuan } from '../utils/pricing';
+import {
+  buildFaqSchema,
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+} from '../utils/schema';
+import type { BrandFaq } from '../types/airport';
+
+const allArticles = await getCollection('articles', (e) => !e.data.draft);
+const allGuides = await getCollection('guides', (e) => !e.data.draft);
+const latestContent = [
+  ...allGuides.map((g) => ({
+    title: g.data.title,
+    description: g.data.description,
+    category: g.data.category,
+    publishDate: g.data.publishDate,
+    href: `/guides/${g.data.slug ?? g.id}/`,
+  })),
+  ...allArticles.map((a) => ({
+    title: a.data.title,
+    description: a.data.description,
+    category: a.data.category,
+    publishDate: a.data.publishDate,
+    href: `/articles/${a.data.slug ?? a.id}/`,
+  })),
+]
+  .sort((a, b) => b.publishDate.localeCompare(a.publishDate))
+  .slice(0, 6);
+
+// Curated representative cross-brand comparison rows (real data from unified store)
+const comparisonHighlightIds = [
+  'lingdongyun-1', // 灵动·拂风 月付
+  'lingdongyun-25', // 灵动·穿云 年付
+  'dalaoyun-6', // 大佬云 财云 月付
+  'flyv-2', // 飞V 入门 月付
+  'muguang-jiasu-2', // 暮光 基础 月付
+  'breezenet-2', // 微风 乘风 月付
+  'feimaoyun-1', // 飞猫 学生版 年付
+  'wuyou-1', // 无忧 MINI 年付
+  'v2yun-3', // 唯兔云 节日限时 月付
+  'lingmao-6', // 灵猫 Big 年付
+  'flashleap-2', // 闪跃 闪动 月付
+  'kuajie-7', // 跨界 无界 月付
+];
+const comparisonPreviewPlans = comparisonHighlightIds
+  .map((id) => ALL_PLANS.find((p) => p.plan.id === id))
+  .filter((x): x is NonNullable<typeof x> => Boolean(x));
+
+const under10Plans = getPlansByBudgetTier('under10').slice(0, 5);
+const tier10to20Plans = getPlansByBudgetTier('10to20')
+  .filter((p) => p.plan.cycle === 'monthly' || p.plan.cycle === 'annual')
+  .slice(0, 5);
+const tier20to30Plans = getPlansByBudgetTier('20to30')
+  .filter((p) => p.plan.cycle === 'monthly' || p.plan.cycle === 'annual')
+  .slice(0, 5);
+const tier30to50Plans = getPlansByBudgetTier('30to50')
+  .filter((p) => p.plan.cycle === 'monthly' || p.plan.cycle === 'annual')
+  .slice(0, 5);
+
+const scenarioGroups = [
+  {
+    key: 'daily' as const,
+    title: '日常网页与社交浏览',
+    desc: '月均 40GB–120GB，适合轻量年付包或入门月付套餐控制开支。',
+    href: '/cheap-airports/',
+  },
+  {
+    key: 'ai' as const,
+    title: 'AI 工具办公（ChatGPT / Claude / Gemini）',
+    desc: '注重节点出口地区纯净度与多地区切换（港/台/日/新/美/欧等），需避开风控高发节点。',
+    href: '/articles/ai-tools-airport-guide/',
+  },
+  {
+    key: 'streaming' as const,
+    title: '流媒体追剧（Netflix / YouTube / Disney+）',
+    desc: '每月建议预留 200GB–500GB 以上流量，优先选择 1× 倍率且单 GB 成本较低的档位。',
+    href: '/articles/streaming-traffic-calculation/',
+  },
+  {
+    key: 'remote_work' as const,
+    title: '海外办公与跨区协同',
+    desc: '需要稳定的桌面端与移动端接入，关注是否支持独享公网 IP 定制或专属客服支持。',
+    href: '/articles/remote-work-airport-selection/',
+  },
+  {
+    key: 'gaming' as const,
+    title: '游戏商店与跨区下载更新',
+    desc: '大型游戏更新与平台访问流量消耗大，需关注大流量档位与低单 GB 成本方案。',
+    href: '/articles/gaming-download-traffic-guide/',
+  },
+  {
+    key: 'multi_device' as const,
+    title: '家庭与个人多设备共用',
+    desc: '重点核对“不限设备”宣传与实际并发连接条款，确认是否支持官方多端或第三方客户端。',
+    href: '/articles/multi-device-rules-guide/',
+  },
+];
+
+const homeFaqs: BrandFaq[] = [
+  {
+    question: '2026 年机场优惠码在哪里查看？哪些有明确折扣比例？',
+    answer:
+      '您可以在本站优惠码中心（/coupons/）查看全部 19 家品牌收录代码。目前在资料档案或官网公开说明中具有明确折扣比例的包括：灵动云 ld888（常规周期 8 折）、飞V fly20（新用户首单 8 折）、大佬云 dly88（四档常规周期 7 折）、闪跃 shanyue（常规周期 8 折）及跨界 kuajie（新人码全场 8 折）；其余收录代码请在对应品牌结账页输入验证实时减免金额。',
+  },
+  {
+    question: '为什么有些机场套餐月均只要 ¥6–¥9，而月付起步要 ¥15–¥30？',
+    answer:
+      '月均 ¥6–¥9 的低价档位绝大多数属于“年付轻量小包”（如无忧 MINI ¥79/年、飞猫学生版 ¥84/年、灵动·穿云 ¥99/年），需要一次性预付全年费用，且每月流量通常在 40GB–80GB 之间、多不参与优惠码折上折。',
+  },
+  {
+    question: '如何计算机场套餐的真实“每 GB 成本”？',
+    answer:
+      '计算公式为：每 GB 成本 = 整期实付金额 ÷ 整期可获得总流量。需要注意：按月重置的年付套餐总流量等于每月额度 × 12，且当月未用完不可结转；此外还需留意节点是否全节点 1× 倍率，若存在高倍率节点则实际可用流量会相应折减。',
+  },
+  {
+    question: '一次性“不限时流量包”划算吗？适合什么人？',
+    answer:
+      '从单 GB 标价看，不限时流量包（通常 ¥0.65–¥1.46/GB）明显高于包月套餐（¥0.06–¥0.20/GB）。但它没有月度过期限制，非常适合每月用量极少（低于 15GB）或仅作备用线路的用户，避免月付流量按月清零浪费。',
+  },
+  {
+    question: '新购买的机场套餐一定支持 Clash 或 Shadowrocket 吗？',
+    answer:
+      '不一定。根据 2026 年 10–11 月多家品牌的最新政策变更，灵动云（仅破晓/凌霄等高阶申请）、飞猫云、唯兔云、无忧、Firefly、灵猫、闪跃等品牌均主推官方专属客户端或 iOS Nextin 方案，部分明确暂停了第三方通用订阅导出。依赖 Clash 的用户买前务必确认当期订阅权限。',
+  },
+  {
+    question: '机场优惠码失效的常见原因有哪些？',
+    answer:
+      '常见原因包括：① 所选套餐在排除名单内（例如灵动云穿云、飞V年付轻量、飞猫云月付均不参与对应新人码）；② 老用户续费误用了“限新用户首单”的代码（如 fly20、lw888）；③ 优惠码区分大小写（如 U1S1、AMM、SOGO10000）；④ 历史补偿或节日活动已过期。',
+  },
+  {
+    question: '第一次购买建议直接年付还是先月付？',
+    answer:
+      '由于大多数机场未提供无条件退款与免费试用，且网络线路、客户端兼容度与本地运营商宽带环境高度相关，建议新用户首次购买优先选择最低周期（月付）验证可用性，确认符合需求后再评估季付或年付。',
+  },
+  {
+    question: '本站的精选品牌排序是根据测速结果排的吗？',
+    answer:
+      '不是。本站的 1–19 品牌顺序为「编辑精选展示顺序」，结合了资料完整度与品牌档位代表性，并非独立测速、延迟或稳定性排名。本站不做任何虚构测速或伪造体验报告。',
+  },
+  {
+    question: '使用本站提供的注册链接会多付钱吗？',
+    answer:
+      '不会提高您的原价或影响折扣。部分链接包含用户指定的推广追踪参数（AFF），通过该链接注册下单可能使本站获得推广佣金，用于维持站点资料核对与更新运营。',
+  },
+  {
+    question: '如果发现品牌价格调整或优惠码过期怎么办？',
+    answer:
+      '您可以查看各页面标注的价格记录日期（如 2026-10-20 / 2026-10-31 / 2026-11-07），实际下单请始终以官方结算页面实显金额为准；也欢迎通过网站底部联系邮箱与纠错入口反馈更新。',
+  },
+];
+
+const schemas = [
+  buildWebSiteSchema(),
+  buildOrganizationSchema(),
+  buildFaqSchema(homeFaqs)!,
+];
+---
+
+<BaseLayout
+  title={SITE_CONFIG.homeSeo.title}
+  description={SITE_CONFIG.homeSeo.description}
+  canonicalPath="/"
+  schemas={schemas}
+>
+  <!-- 1. Hero 首屏：冰川白与淡青色渐变 -->
+  <section class="bg-band-hero border-b border-slate-200/80 py-12 sm:py-16 lg:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200 text-xs font-semibold text-[#102343] mb-5 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>机场优惠 Airport Deals · 收录 {ALL_BRANDS.length} 家品牌 {ALL_PLANS.length} 档套餐记录</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#102343] tracking-tight leading-tight mb-5">
+          {SITE_CONFIG.homeSeo.h1}
+        </h1>
+
+        <p class="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
+          {SITE_CONFIG.homeSeo.subtitle}
+        </p>
+
+        <!-- Real Full-Site Search Box -->
+        <form
+          action="/search/"
+          method="get"
+          class="max-w-2xl mx-auto bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-6"
+          role="search"
+          aria-label="全站优惠与套餐搜索"
+        >
+          <div class="flex items-center gap-2.5 flex-1 px-3">
+            <svg class="w-5 h-5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="search"
+              name="q"
+              placeholder="搜索灵动云、ld888、便宜机场、年付、100GB、不限时、ChatGPT..."
+              class="w-full py-2.5 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none min-h-[44px]"
+              aria-label="搜索关键词"
+            />
+          </div>
+          <button
+            type="submit"
+            class="px-6 py-3 rounded-xl bg-[#102343] hover:bg-slate-800 text-white text-sm font-semibold transition-colors min-h-[44px] shrink-0"
+          >
+            搜索全站
+          </button>
+        </form>
+
+        <!-- Primary Action Buttons -->
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="/coupons/"
+            class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors min-h-[44px] inline-flex items-center"
+          >
+            查看最新优惠
+          </a>
+          <a
+            href="/comparison/"
+            class="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-[#102343] border border-slate-200 text-sm font-semibold shadow-xs transition-colors min-h-[44px] inline-flex items-center"
+          >
+            浏览套餐对比
+          </a>
+        </div>
+
+        <p class="mt-6 text-xs text-slate-500">
+          编辑声明：所有价格与优惠均基于标注日期的公开资料或用户提交档案，非实测性能排名 ·
+          <a href="/affiliate-disclosure/" class="underline hover:text-[#102343]">推广关系披露</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 快捷分类 -->
+  <section class="py-10 bg-white border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {SITE_CONFIG.quickCategories.map((cat) => (
+          <a
+            href={cat.href}
+            class="bento-card p-4 flex flex-col justify-between gap-2 hover:border-emerald-300"
+          >
+            <div>
+              <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium mb-2">
+                {cat.badge}
+              </span>
+              <h2 class="text-base font-bold text-[#102343]">{cat.title}</h2>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">{cat.description}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 最新机场优惠：纯白与薄荷绿渐变 -->
+  {RECORDED_COUPONS.length > 0 && (
+    <section id="latest-coupons" class="bg-band-coupons py-12 sm:py-16 reveal-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+              Coupon & Discount Deals
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+              最新机场优惠码与折扣活动
+            </h2>
+            <p class="text-sm text-slate-600 mt-2 max-w-2xl">
+              优先展示拥有明确折扣比例记录的有效优惠码（支持一键复制）；未公布固定百分比的收录代码详见优惠码中心，实际减免以结账页面显示为准。
+            </p>
+          </div>
+          <a
+            href="/coupons/"
+            class="inline-flex items-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-300 text-sm font-semibold text-[#102343] shrink-0 min-h-[44px]"
+          >
+            全部 {RECORDED_COUPONS.length} 枚优惠码 →
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {ACTIVE_CALCULABLE_COUPONS.map((coupon) => (
+            <CouponCard coupon={coupon} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 4. 精选机场品牌：冰川白与浅蓝色渐变 -->
+  <section class="bg-band-brands py-12 sm:py-16 reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            Editor's Curated Directory
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+            精选机场品牌档案（按编辑展示顺序）
+          </h2>
+          <p class="text-sm text-slate-600 mt-2 max-w-3xl">
+            以下排序为本站依据已提交资料完整度整理的编辑精选展示顺序，而非独立测速或稳定性排名；站内保留推广关系说明，点击品牌详情可查看全周期报价、客户端政策与售后规则。
+          </p>
+        </div>
+        <a
+          href="/brands/"
+          class="inline-flex items-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 text-sm font-semibold text-[#102343] shrink-0 min-h-[44px]"
+        >
+          查看全部 {ALL_BRANDS.length} 个品牌 →
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {HOME_FEATURED_BRANDS.map((brand) => (
+          <BrandCard brand={brand} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 机场套餐价格对比：纯白背景 -->
+  <section class="bg-band-comparison py-12 sm:py-16 border-y border-slate-100 reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Unified Price Database
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+            机场套餐价格对比一览
+          </h2>
+          <p class="text-sm text-slate-600 mt-2 max-w-3xl">
+            所有价格均读取自本站统一套餐数据库（人民币 CNY）。仅对公开规则确认折扣率且适用优惠码的套餐计算「有效折后价」；年付小包的月均成本已注明为按 12 个月折算，实际需整年预付。
+          </p>
+        </div>
+        <a
+          href="/comparison/"
+          class="inline-flex items-center px-4 py-2.5 rounded-xl bg-[#102343] hover:bg-slate-800 text-white text-sm font-semibold shrink-0 min-h-[44px]"
+        >
+          进入 {ALL_PLANS.length} 档全库筛选对比 →
+        </a>
+      </div>
+
+      <PlanTable
+        plans={comparisonPreviewPlans}
+        caption="精选机场品牌代表性套餐价格、折后价与每GB成本对比表"
+      />
+    </div>
+  </section>
+
+  <!-- 6. 预算分类推荐 -->
+  <section class="py-12 sm:py-16 bg-[#F8FAFC] reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+          Budget Planning
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+          按每月预算挑选套餐（实付周期透明标注）
+        </h2>
+        <p class="text-sm text-slate-600 mt-2 max-w-3xl">
+          以下各预算档位均按真实折后或原价月均成本归类，并明确区分「可直接按月付费」与「需一次性年付/季付预付」的方案，避免混淆单次付款压力。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {[
+          { title: '每月 ¥10 以下（轻量年付为主）', items: under10Plans, link: '/cheap-airports/' },
+          { title: '每月 ¥10–¥20（高性价比入门）', items: tier10to20Plans, link: '/cheap-airports/' },
+          { title: '每月 ¥20–¥30（均衡常用档）', items: tier20to30Plans, link: '/best-value/' },
+          { title: '每月 ¥30–¥50（中高流量流媒体档）', items: tier30to50Plans, link: '/comparison/' },
+        ].map((bucket) => (
+          <div class="bento-card p-6">
+            <div class="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+              <h3 class="text-lg font-bold text-[#102343]">{bucket.title}</h3>
+              <a href={bucket.link} class="text-xs font-semibold text-emerald-700 hover:underline">
+                查看更多 →
+              </a>
+            </div>
+            <ul class="space-y-3">
+              {bucket.items.map((item) => (
+                <li class="flex items-center justify-between gap-3 text-sm border-b border-slate-100/80 pb-2.5 last:border-b-0 last:pb-0">
+                  <div class="min-w-0">
+                    <a
+                      href={`/brands/${item.brand.slug}/`}
+                      class="font-semibold text-[#102343] hover:text-emerald-700"
+                    >
+                      {item.brand.name} · {item.plan.planName}
+                    </a>
+                    <div class="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span>{item.plan.monthlyTrafficGB}GB/月</span>
+                      <span>·</span>
+                      <span>{item.plan.cycleLabel}实付 {formatYuan(item.metrics.effectivePayable)}</span>
+                      {item.requiresPrepayment ? (
+                        <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 text-[10px] font-medium">
+                          需{item.plan.cycleLabel}预付
+                        </span>
+                      ) : (
+                        <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-medium">
+                          支持单月支付
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <span class="font-bold text-[#102343]">
+                      {formatYuan(item.metrics.effectiveMonthlyAvg ?? 0)}
+                    </span>
+                    <span class="text-xs text-slate-500">/月</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 使用场景推荐 -->
+  <section class="py-12 sm:py-16 bg-white border-t border-slate-100 reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+          Usage Scenarios
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+          按实际使用场景匹配方案
+        </h2>
+        <p class="text-sm text-slate-600 mt-2 max-w-3xl">
+          仅列出公开资料或服务条款中明确提及支持对应场景的品牌；具体到 AI 风控、流媒体片库或游戏联机延迟，仍受本地网络与目标平台规则影响。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {scenarioGroups.map((sc) => {
+          const matched = ALL_BRANDS.filter((b) => b.usageScenarios.includes(sc.key)).slice(0, 4);
+          return (
+            <div class="bento-card p-5 flex flex-col justify-between gap-4">
+              <div>
+                <h3 class="text-base font-bold text-[#102343] mb-2">{sc.title}</h3>
+                <p class="text-xs text-slate-600 leading-relaxed mb-4">{sc.desc}</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {matched.map((b) => (
+                    <a
+                      href={`/brands/${b.slug}/`}
+                      class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-medium text-slate-700 transition-colors"
+                    >
+                      {b.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <a
+                href={sc.href}
+                class="text-xs font-semibold text-indigo-700 hover:text-indigo-900 pt-2 border-t border-slate-100 inline-flex items-center"
+              >
+                阅读对应场景购买攻略 →
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 最新深度文章：淡紫色与浅灰色渐变 -->
+  <section class="bg-band-articles py-12 sm:py-16 reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            In-Depth Articles
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+            最新深度文章与购买攻略
+          </h2>
+          <p class="text-sm text-slate-600 mt-2">
+            涵盖品牌深度拆解、套餐性价比计算方法、优惠码使用排雷与流量需求规划。
+          </p>
+        </div>
+        <a
+          href="/articles/"
+          class="inline-flex items-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 text-sm font-semibold text-[#102343] shrink-0 min-h-[44px]"
+        >
+          浏览全部文章 →
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {latestContent.map((post) => (
+          <article class="bento-card p-5 flex flex-col justify-between gap-3">
+            <div>
+              <div class="flex items-center justify-between gap-2 text-xs mb-2.5">
+                <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-semibold">
+                  {post.category}
+                </span>
+                <time class="text-slate-400" datetime={post.publishDate}>
+                  {post.publishDate}
+                </time>
+              </div>
+              <h3 class="text-base font-bold text-[#102343] leading-snug mb-2">
+                <a href={post.href} class="hover:text-emerald-700 transition-colors">
+                  {post.title}
+                </a>
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">{post.description}</p>
+            </div>
+            <a
+              href={post.href}
+              class="text-xs font-semibold text-[#102343] hover:text-emerald-700 pt-2 border-t border-slate-100"
+            >
+              阅读全文 →
+            </a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. 机场购买知识（高价值原创新手与成本分析内容） -->
+  <section class="py-12 sm:py-16 bg-white border-t border-slate-100 reveal-section">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+          Buyer Knowledge Base
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1 mb-6">
+          机场购买知识：如何理清优惠码、流量配额与付款周期账本
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-700 leading-relaxed">
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+            <h3 class="text-base font-bold text-[#102343]">一、优惠码的三种真实折扣机制</h3>
+            <p>
+              目前各品牌机场常见的优惠大致分为三类：第一类是<strong>固定百分比新人/通用码</strong>，例如飞V 的 <code>fly20</code>（新用户首单 8 折）、灵动云的 <code>ld888</code>（常规档位 8 折）以及大佬云验券记录的 <code>dly88</code>（7 折）；第二类是<strong>官网周期内嵌折价</strong>，如 U1S1、灵动云、飞V 的季付约 9–95 折、半年付 85–9 折、年付 8–85 折；第三类则是<strong>特惠年付或限定活动包</strong>（如穿云 ¥99/年、无忧 MINI ¥79/年、飞猫学生版 ¥84/年），这类产品通常已锁定最低单价，不再支持输入优惠码折上折。
+            </p>
+          </div>
+
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+            <h3 class="text-base font-bold text-[#102343]">二、月均成本 vs 整期现金流压力</h3>
+            <p>
+              查看比价表时，务必区分「月付实际应付」与「年付折合月均」。例如同样折算到每月 ¥8 左右，灵动·穿云需要一次性预付 ¥99、无忧 MINI 需要预付 ¥79，且多数机场不支持无条件退款。如果您尚不确定自己的设备环境、校园网或公司内网是否适配，或者未确认是否需要 Clash 通用订阅导出权限，建议首月先购入支持月付的入门档（如唯兔云 ¥14.9–¥19.9、灵动拂风用码后 ¥16、大佬云财云用码后 ¥13.99）实地验证后再考虑长周期续费。
+            </p>
+          </div>
+
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+            <h3 class="text-base font-bold text-[#102343]">三、流量额度、重置日与倍率陷阱</h3>
+            <p>
+              100GB、200GB 与 500GB 在日常中的体感差异很大：仅网页查阅、使用 ChatGPT/Claude 与社交图文，每月 40GB–80GB 往往足够；如果每日稳定观看 1080P/4K YouTube 或 Netflix，建议直接选择 200GB–500GB 档位。同时需关注两点隐性规则：一是<strong>未用完流量通常按月清零不结转</strong>；二是<strong>节点倍率</strong>——本站重点收录的灵动云、飞V、微风网络、大佬云、跨界等均在资料中标注了全节点 1× 倍率，而缺少明确倍率表的服务则建议在购买后先于节点面板查看是否有 2× 或 3× 高耗流节点。
+            </p>
+          </div>
+
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+            <h3 class="text-base font-bold text-[#102343]">四、付款方式、订阅政策与售后边界</h3>
+            <p>
+              在付款环节，主流机场均普遍支持支付宝、微信支付或 USDT。但在下单前最容易被忽视的是<strong>客户端开放政策</strong>：从 2026 年 10 月起，包括无忧、Firefly、唯兔云、飞猫云、灵猫、闪跃在内的多家品牌陆续停发第三方通用订阅，改为引导官方专属客户端或 iOS Nextin 方案。如果您的使用场景强依赖软路由（OpenWrt）或特定 Clash/Shadowrocket 规则分流，务必优先阅读各品牌详情页的客户端兼容章节再做选择。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. FAQ（10 个高质量常见问题） -->
+  <section class="py-12 sm:py-16 bg-[#F8FAFC] border-t border-slate-200/70 reveal-section">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Frequently Asked Questions
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-[#102343] mt-1">
+          机场优惠与套餐购买常见问题（FAQ）
+        </h2>
+      </div>
+
+      <div class="space-y-3">
+        {homeFaqs.map((faq) => (
+          <details class="bento-card p-5 group">
+            <summary class="font-bold text-sm sm:text-base text-[#102343] cursor-pointer list-none flex items-center justify-between gap-4 min-h-[36px]">
+              <span>{faq.question}</span>
+              <span class="text-slate-400 group-open:rotate-180 transition-transform shrink-0" aria-hidden="true">
+                ▼
+              </span>
+            </summary>
+            <p class="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-600 leading-relaxed">
+              {faq.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

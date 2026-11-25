@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_CONFIG } from '../data/site-config';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '联系与价格纠错' }];
+const title = '联系我们、优惠码失效反馈与价格纠错｜机场优惠';
+const description =
+  '提交机场套餐调价通知、优惠码失效反馈、品牌资料勘误或合作咨询。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/contact/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/contact/" schemas={schemas}>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">联系与价格纠错</h1>
+      <p class="text-base text-slate-600 leading-relaxed">
+        机场套餐定价、客户端策略与优惠活动具有时效性。如果您在下单过程中发现任意页面的数字与官方结算页存在出入，欢迎向编辑部提交纠错。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed">
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">联系邮箱</h2>
+        <p>
+          官方联系与资料勘误邮箱：
+          <a href={`mailto:${SITE_CONFIG.email}`} class="font-bold text-emerald-700 underline">
+            {SITE_CONFIG.email}
+          </a>
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">提交纠错建议附带的信息</h2>
+        <ul class="list-disc pl-5 space-y-2">
+          <li>涉及的机场品牌名称与站内页面 URL。</li>
+          <li>变动后的套餐价格、流量配额或优惠码规则说明。</li>
+          <li>信息核实日期（如能提供已脱敏的官网结算页面或官方公告截图更佳，请务必隐藏个人邮箱、订单号与私有订阅地址）。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

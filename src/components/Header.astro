@@ -1,0 +1,170 @@
+---
+import { SITE_CONFIG } from '../data/site-config';
+import SiteLogo from './SiteLogo.astro';
+
+const currentPath = Astro.url.pathname;
+const desktopNav = SITE_CONFIG.navItems.filter((item) => item.href !== '/search/');
+---
+
+<header class="sticky top-0 z-40 glass-nav">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <a
+      href="/"
+      class="inline-flex items-center gap-2.5 min-h-[44px] py-1 shrink-0"
+      aria-label="机场优惠首页"
+    >
+      <SiteLogo size={34} />
+      <span class="flex flex-col leading-tight">
+        <span class="text-[17px] font-bold tracking-tight text-[#102343]">机场优惠</span>
+        <span class="text-[11px] font-medium text-slate-500 hidden sm:block">Airport Deals</span>
+      </span>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <nav aria-label="主导航" class="hidden lg:flex items-center gap-1">
+      {desktopNav.map((item) => {
+        const isActive =
+          item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
+        return (
+          <a
+            href={item.href}
+            class={`px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] inline-flex items-center ${
+              isActive
+                ? 'bg-[#102343] text-white'
+                : 'text-slate-700 hover:text-[#102343] hover:bg-slate-200/60'
+            }`}
+          >
+            {item.label}
+          </a>
+        );
+      })}
+    </nav>
+
+    <!-- Desktop Search Trigger + Mobile Actions -->
+    <div class="flex items-center gap-2 shrink-0">
+      <button
+        type="button"
+        data-open-search
+        class="hidden lg:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white/90 text-sm text-slate-600 hover:border-slate-300 hover:text-[#102343] transition-colors min-h-[40px]"
+        aria-label="打开全站搜索"
+      >
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <span>搜索品牌 / 优惠码</span>
+      </button>
+
+      <a
+        href="/search/"
+        data-open-search
+        class="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        aria-label="搜索"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </a>
+
+      <button
+        type="button"
+        id="mobile-menu-toggle"
+        aria-expanded="false"
+        aria-controls="mobile-menu-drawer"
+        aria-label="展开导航菜单"
+        class="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-slate-200 bg-white text-[#102343] hover:bg-slate-50"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Drawer -->
+  <div
+    id="mobile-menu-drawer"
+    class="hidden lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3"
+  >
+    <nav aria-label="移动端主导航" class="grid grid-cols-2 gap-2">
+      {SITE_CONFIG.navItems.map((item) => {
+        const isActive =
+          item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href);
+        return (
+          <a
+            href={item.href}
+            class={`px-3.5 py-2.5 rounded-xl text-sm font-medium min-h-[44px] flex items-center ${
+              isActive
+                ? 'bg-[#102343] text-white'
+                : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            {item.label}
+          </a>
+        );
+      })}
+    </nav>
+  </div>
+</header>
+
+<!-- Fullscreen / Modal Search Overlay -->
+<div
+  id="global-search-modal"
+  class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center p-0 sm:p-6 md:pt-16"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="search-modal-title"
+>
+  <div class="bg-white w-full h-full sm:h-auto sm:max-h-[84vh] sm:max-w-2xl sm:rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center gap-2.5">
+      <h2 id="search-modal-title" class="sr-only">全站中文搜索</h2>
+      <svg class="w-5 h-5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <form action="/search/" method="get" id="modal-search-form" class="flex-1 flex items-center gap-2">
+        <input
+          type="search"
+          name="q"
+          id="modal-search-input"
+          autocomplete="off"
+          placeholder="输入机场名、优惠码、100GB、不限时、ChatGPT、Clash..."
+          class="w-full py-2 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="px-3.5 py-2 rounded-lg bg-[#102343] text-white text-sm font-medium shrink-0 min-h-[40px]"
+        >
+          搜索
+        </button>
+      </form>
+      <button
+        type="button"
+        id="close-search-modal"
+        aria-label="关闭搜索窗口"
+        class="inline-flex items-center justify-center w-11 h-11 rounded-xl text-slate-500 hover:bg-slate-100 shrink-0"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="modal-search-results" class="p-4 overflow-y-auto flex-1 space-y-3 text-sm">
+      <div class="text-slate-500">
+        <p class="font-medium text-slate-700 mb-2">热门搜索词</p>
+        <div class="flex flex-wrap gap-2">
+          {['灵动云', 'ld888', '大佬云', 'fly20', '便宜机场', '年付', '100GB', '不限时流量', 'ChatGPT', 'Clash'].map((kw) => (
+            <button
+              type="button"
+              data-quick-query={kw}
+              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 text-xs font-medium min-h-[36px]"
+            >
+              {kw}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

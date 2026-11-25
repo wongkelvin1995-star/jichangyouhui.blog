@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import BrandCard from '../../components/BrandCard.astro';
+import { ALL_BRANDS } from '../../data/brands';
+import { buildBreadcrumbSchema, buildCollectionSchema } from '../../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '机场推荐与品牌大全' }];
+const title = '2026 机场品牌大全｜19 家机场套餐、优惠码与购买指南汇总｜机场优惠';
+const description =
+  '按编辑精选展示顺序汇总 19 家机场品牌档案，提供官方入口、专属注册链接、全周期套餐原价与折后成本分析，不作虚假测速排名。';
+
+const schemas = [
+  buildCollectionSchema({
+    title,
+    description,
+    path: '/brands/',
+    items: ALL_BRANDS.map((b) => ({
+      name: `${b.name}（${b.englishName}）`,
+      url: `/brands/${b.slug}/`,
+    })),
+  }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/brands/" schemas={schemas}>
+  <section class="bg-band-brands py-10 sm:py-14 border-b border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <div class="max-w-3xl">
+        <span class="inline-block px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold mb-3">
+          Brand Directory · 共 {ALL_BRANDS.length} 家品牌
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-4">
+          2026 机场品牌大全与精选展示
+        </h1>
+        <p class="text-base text-slate-600 leading-relaxed">
+          本站仅收录已提交完整可追溯资料的品牌，按编辑精选展示顺序排列（并非独立网络测速排名）。每家品牌均设有独立的品牌详情主页、优惠码规则页与套餐明细表。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-12 bg-[#F8FAFC]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {ALL_BRANDS.map((brand) => (
+          <BrandCard brand={brand} />
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /search/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /search/
+
+Sitemap: https://jichangyouhui.blog/sitemap.xml

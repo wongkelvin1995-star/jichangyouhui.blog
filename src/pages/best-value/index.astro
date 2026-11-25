@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PlanTable from '../../components/PlanTable.astro';
+import CouponCard from '../../components/CouponCard.astro';
+import { ACTIVE_CALCULABLE_COUPONS } from '../../data/brands';
+import { ALL_PLANS, getOneTimePlans } from '../../data/plans';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../../utils/schema';
+
+const lowestPerGbPeriodic = [...ALL_PLANS]
+  .filter(
+    (p) =>
+      p.plan.cycle !== 'one_time' &&
+      p.plan.category !== 'dedicated' &&
+      p.metrics.effectiveCostPerGB !== null
+  )
+  .sort((a, b) => (a.metrics.effectiveCostPerGB ?? 999) - (b.metrics.effectiveCostPerGB ?? 999))
+  .slice(0, 24);
+
+const oneTimeDeals = getOneTimePlans().slice(0, 15);
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '机场优惠与高性价比分析' }];
+const title = '2026 性价比机场优惠专区｜最低每GB单价与折扣叠加测算｜机场优惠';
+const description =
+  '依据真实套餐价格与已核实折扣比例，横向对比全站每 GB 单价最低的包月/年付套餐及一次性不限时流量包，帮助预算敏感型用户精准选档。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/best-value/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/best-value/" schemas={schemas}>
+  <section class="bg-band-coupons py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">
+        2026 机场优惠与高性价比套餐专区
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
+        “性价比”不能脱离实际流量需求谈绝对低价。本页从「已核实有效折扣活动」与「每 GB 折合单价」两个客观维度筛选全站方案，所有数据直接同步统一套餐库。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div>
+        <h2 class="text-2xl font-bold text-[#102343] mb-2">一、已核实折扣率的直降优惠入口</h2>
+        <p class="text-sm text-slate-600 mb-5">
+          使用以下具有明确折扣比例记录的优惠码，可在官方原价基础上直接降低 20%–30% 实付金额：
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {ACTIVE_CALCULABLE_COUPONS.map((c) => (
+            <CouponCard coupon={c} compact={true} />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-bold text-[#102343] mb-2">二、每 GB 成本最低的周期套餐（前 24 档）</h2>
+        <p class="text-sm text-slate-600 mb-4">
+          提示：大流量或长周期套餐的每 GB 成本普遍更低（¥0.06–¥0.10/GB），但请注意避免盲目购买远超自身实际耗流量的高额档位导致浪费。
+        </p>
+        <PlanTable plans={lowestPerGbPeriodic} />
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-bold text-[#102343] mb-2">三、每 GB 成本较低的一次性不限时流量包</h2>
+        <p class="text-sm text-slate-600 mb-4">
+          不限时流量包按总量扣减，不按月清零，适合低频备用；通常大容量档位（500GB–1TB）的单 GB 成本明显低于 100GB 小包。
+        </p>
+        <PlanTable plans={oneTimeDeals} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

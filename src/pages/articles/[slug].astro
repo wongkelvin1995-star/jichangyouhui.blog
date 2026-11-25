@@ -1,0 +1,60 @@
+---
+import { getCollection, render } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('articles', (e) => !e.data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.data.slug ?? entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const slug = entry.data.slug ?? entry.id;
+
+const allArticles = await getCollection('articles', (e) => !e.data.draft);
+const explicitRelated = entry.data.relatedArticles
+  .map((relSlug) => allArticles.find((a) => (a.data.slug ?? a.id) === relSlug))
+  .filter((x): x is NonNullable<typeof x> => Boolean(x));
+
+const fallbackRelated = allArticles
+  .filter(
+    (a) =>
+      (a.data.slug ?? a.id) !== slug &&
+      !explicitRelated.some((r) => (r.data.slug ?? r.id) === (a.data.slug ?? a.id)) &&
+      (a.data.category === entry.data.category ||
+        (entry.data.brand && a.data.brand === entry.data.brand))
+  )
+  .slice(0, Math.max(0, 4 - explicitRelated.length));
+
+const relatedArticlesData = [...explicitRelated, ...fallbackRelated].slice(0, 4).map((a) => ({
+  title: a.data.title,
+  href: `/articles/${a.data.slug ?? a.id}/`,
+  category: a.data.category,
+  description: a.data.description,
+}));
+---
+
+<ArticleLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  canonicalPath={`/articles/${slug}/`}
+  category={entry.data.category}
+  publishDate={entry.data.publishDate}
+  updatedDate={entry.data.updatedDate}
+  author={entry.data.author}
+  headings={headings}
+  relatedBrands={entry.data.relatedBrands}
+  relatedArticlesData={relatedArticlesData}
+  sources={entry.data.sources}
+  faqs={entry.data.faqs}
+  breadcrumbs={[
+    { label: '首页', href: '/' },
+    { label: '深度文章', href: '/articles/' },
+    { label: entry.data.title },
+  ]}
+>
+  <Content />
+</ArticleLayout>

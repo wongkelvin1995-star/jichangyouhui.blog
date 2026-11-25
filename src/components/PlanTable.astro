@@ -1,0 +1,99 @@
+---
+import type { EnrichedPlan } from '../data/plans';
+import { formatYuan } from '../utils/pricing';
+
+interface Props {
+  plans: EnrichedPlan[];
+  showBrandColumn?: boolean;
+  caption?: string;
+}
+
+const { plans, showBrandColumn = true, caption } = Astro.props;
+---
+
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+  <div class="table-scroll-wrap">
+    <table class="w-full text-left border-collapse text-sm">
+      {caption && <caption class="sr-only">{caption}</caption>}
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+          {showBrandColumn && <th class="py-3.5 px-4 whitespace-nowrap">品牌名称</th>}
+          <th class="py-3.5 px-4 whitespace-nowrap">套餐名称</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">付款周期</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">原价</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">有效折后价</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">流量额度</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">平均月成本</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">每 GB 成本</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {plans.map(({ brand, plan, metrics }) => (
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            {showBrandColumn && (
+              <td class="py-3.5 px-4 whitespace-nowrap font-semibold text-[#102343]">
+                <a href={`/brands/${brand.slug}/`} class="hover:text-emerald-700">
+                  {brand.name}
+                </a>
+              </td>
+            )}
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <div class="font-medium text-slate-900">{plan.planName}</div>
+              {plan.notes && (
+                <div class="text-[11px] text-slate-500 max-w-[230px] truncate" title={plan.notes}>
+                  {plan.notes}
+                </div>
+              )}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <span class="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                {plan.cycleLabel}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap font-medium text-slate-800">
+              {formatYuan(plan.originalPrice)}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              {metrics.hasConfirmedDiscount && metrics.discountedPrice !== null ? (
+                <div>
+                  <span class="font-bold text-emerald-700">{formatYuan(metrics.discountedPrice)}</span>
+                  <span class="ml-1 text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                    码 {metrics.appliedCouponCode}
+                  </span>
+                </div>
+              ) : (
+                <span class="text-xs text-slate-500">按原价结算</span>
+              )}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-slate-700">
+              {plan.cycle === 'one_time'
+                ? `${plan.totalPeriodGB} GB 总量`
+                : `${plan.monthlyTrafficGB} GB/月`}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap font-medium text-slate-800">
+              {metrics.effectiveMonthlyAvg !== null
+                ? `${formatYuan(metrics.effectiveMonthlyAvg)}/月`
+                : '一次性总量包'}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-slate-600">
+              {metrics.effectiveCostPerGB !== null
+                ? `${formatYuan(metrics.effectiveCostPerGB)}/GB`
+                : '按总量计'}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <a
+                href={brand.affLink}
+                target="_blank"
+                rel="sponsored nofollow noopener noreferrer"
+                class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#102343] hover:bg-emerald-700 text-white text-xs font-semibold transition-colors min-h-[36px]"
+              >
+                前往购买
+              </a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>

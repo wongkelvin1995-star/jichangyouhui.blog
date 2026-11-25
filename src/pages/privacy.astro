@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_CONFIG } from '../data/site-config';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '隐私政策' }];
+const title = '隐私政策｜机场优惠（Airport Deals）';
+const description =
+  '了解机场优惠（jichangyouhui.blog）如何处理本地搜索输入、静态页面访问与邮箱联系信息。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/privacy/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/privacy/" schemas={schemas}>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">隐私政策</h1>
+      <p class="text-base text-slate-600 leading-relaxed">
+        本站采用纯静态生成架构，不强制要求用户注册账号或登录即可阅读全部公开评测、优惠码与套餐对比内容。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed">
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">1. 数据收集与站内搜索</h2>
+        <p>
+          全站中文搜索功能在您的浏览器本地加载公开索引数据运行，不会将您的个人搜索关键词上传至第三方广告追踪系统。
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">2. 第三方外部链接</h2>
+        <p>
+          当您点击品牌购买按钮前往第三方机场站点时，您将受该第三方网站的隐私政策及服务条款约束。请勿在公开反馈或评论中发送您的私密订阅 URL、账号密码或支付凭证明细。
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">3. 联系方式</h2>
+        <p>
+          如需更正或删除您通过邮件提交的纠错记录，请联系：<a href={`mailto:${SITE_CONFIG.email}`} class="text-emerald-700 underline">{SITE_CONFIG.email}</a>。
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

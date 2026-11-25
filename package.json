@@ -1,0 +1,26 @@
+{
+  "name": "jichangyouhui.blog",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "verify": "node scripts/verify-site.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^22.20.5",
+    "astro": "^5.18.2",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.3"
+  }
+}

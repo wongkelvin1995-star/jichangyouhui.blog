@@ -1,0 +1,22 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="55%" stop-color="#ECFEFF"/>
+      <stop offset="100%" stop-color="#ECFDF5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="72" y="72" width="1056" height="486" rx="28" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="128" y="136" width="96" height="72" rx="16" fill="#102343"/>
+  <circle cx="128" cy="172" r="8" fill="#FFFFFF"/>
+  <circle cx="224" cy="172" r="8" fill="#FFFFFF"/>
+  <path d="M174 156L194 156L206 172L194 188L174 188L174 156Z" stroke="#10B981" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="185" cy="172" r="4" fill="#10B981"/>
+  <text x="128" y="290" fill="#102343" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="60" font-weight="800">机场优惠 · Airport Deals</text>
+  <text x="128" y="360" fill="#475569" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="500">2026 机场优惠码大全 · 套餐价格对比 · 折后成本与购买攻略</text>
+  <rect x="128" y="420" width="240" height="52" rx="12" fill="#102343"/>
+  <text x="158" y="454" fill="#FFFFFF" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="22" font-weight="600">jichangyouhui.blog</text>
+  <rect x="388" y="420" width="220" height="52" rx="12" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
+  <text x="414" y="454" fill="#065F46" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="22" font-weight="600">真实可核对资料库</text>
+</svg>

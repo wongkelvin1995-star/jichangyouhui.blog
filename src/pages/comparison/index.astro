@@ -1,0 +1,230 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { ALL_BRANDS } from '../../data/brands';
+import { ALL_PLANS } from '../../data/plans';
+import { formatYuan } from '../../utils/pricing';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '套餐价格对比' }];
+const title = '2026 机场套餐价格对比系统｜19 家品牌全周期成本与每GB单价筛选｜机场优惠';
+const description = `全库收录 ${ALL_BRANDS.length} 家机场共 ${ALL_PLANS.length} 档套餐报价，支持按付款周期（月/季/半年/年/一次性）、预算区间与品牌快速筛选对比。`;
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/comparison/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/comparison/" schemas={schemas}>
+  <section class="bg-band-comparison py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">
+        2026 机场套餐价格对比数据库
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
+        全库共收录 <strong>{ALL_BRANDS.length}</strong> 家品牌 <strong>{ALL_PLANS.length}</strong> 档套餐记录（均读取自统一数据中心）。仅对确认折扣比例的适用套餐标注有效折后价，一次性流量包不强行折算月均价。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-[#F8FAFC]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <!-- Interactive Filter Toolbar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label for="filter-brand" class="block text-xs font-semibold text-slate-600 mb-1">筛选品牌</label>
+            <select id="filter-brand" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white min-h-[44px]">
+              <option value="all">全部 19 家品牌</option>
+              {ALL_BRANDS.map((b) => (
+                <option value={b.slug}>{b.name}（{b.englishName}）</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label for="filter-cycle" class="block text-xs font-semibold text-slate-600 mb-1">付款周期</label>
+            <select id="filter-cycle" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white min-h-[44px]">
+              <option value="all">全部周期</option>
+              <option value="monthly">月付</option>
+              <option value="quarterly">季付</option>
+              <option value="semiannual">半年付</option>
+              <option value="annual">年付</option>
+              <option value="biennial">两年付</option>
+              <option value="triennial">三年付</option>
+              <option value="one_time">一次性流量包</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="filter-budget" class="block text-xs font-semibold text-slate-600 mb-1">月均预算区间</label>
+            <select id="filter-budget" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white min-h-[44px]">
+              <option value="all">不限预算</option>
+              <option value="under10">¥10 以下 / 月</option>
+              <option value="10to20">¥10–¥20 / 月</option>
+              <option value="20to30">¥20–¥30 / 月</option>
+              <option value="30to50">¥30–¥50 / 月</option>
+              <option value="over50">¥50 以上 / 月</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="filter-sort" class="block text-xs font-semibold text-slate-600 mb-1">排序方式</label>
+            <select id="filter-sort" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white min-h-[44px]">
+              <option value="default">编辑展示顺序</option>
+              <option value="price-asc">实付总价：从低到高</option>
+              <option value="monthly-asc">月均成本：从低到高</option>
+              <option value="gb-asc">每 GB 单价：从低到高</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+          <span id="compare-count">当前显示全部 {ALL_PLANS.length} 档套餐</span>
+          <button
+            type="button"
+            id="filter-reset"
+            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold"
+          >
+            重置筛选条件
+          </button>
+        </div>
+      </div>
+
+      <!-- Full Table with Local Scroll Wrapper -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+        <div class="table-scroll-wrap">
+          <table class="w-full text-left border-collapse text-sm" id="comparison-table">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+                <th class="py-3.5 px-4 whitespace-nowrap">品牌</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">套餐名称</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">周期</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">原价</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">有效折后价</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">流量额度</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">平均月成本</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">每 GB 成本</th>
+                <th class="py-3.5 px-4 whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" id="comparison-tbody">
+              {ALL_PLANS.map(({ brand, plan, metrics, budgetTier, brandRank }, idx) => (
+                <tr
+                  data-idx={idx}
+                  data-brand={brand.slug}
+                  data-cycle={plan.cycle}
+                  data-budget={budgetTier ?? 'one_time'}
+                  data-price={metrics.effectivePayable}
+                  data-monthly={metrics.effectiveMonthlyAvg ?? 999999}
+                  data-gb={metrics.effectiveCostPerGB ?? 999999}
+                  data-rank={brandRank}
+                  class="hover:bg-slate-50/80 transition-colors"
+                >
+                  <td class="py-3 px-4 whitespace-nowrap font-semibold text-[#102343]">
+                    <a href={`/brands/${brand.slug}/`} class="hover:text-emerald-700">{brand.name}</a>
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    <span class="font-medium text-slate-900">{plan.planName}</span>
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs">{plan.cycleLabel}</span>
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">{formatYuan(plan.originalPrice)}</td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    {metrics.hasConfirmedDiscount && metrics.discountedPrice !== null ? (
+                      <span class="font-bold text-emerald-700">
+                        {formatYuan(metrics.discountedPrice)}（{metrics.appliedCouponCode}）
+                      </span>
+                    ) : (
+                      <span class="text-xs text-slate-500">按原价结算</span>
+                    )}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    {plan.cycle === 'one_time' ? `${plan.totalPeriodGB}GB 总量` : `${plan.monthlyTrafficGB}GB/月`}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap font-medium">
+                    {metrics.effectiveMonthlyAvg !== null ? `${formatYuan(metrics.effectiveMonthlyAvg)}/月` : '一次性'}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap text-slate-600">
+                    {metrics.effectiveCostPerGB !== null ? `${formatYuan(metrics.effectiveCostPerGB)}/GB` : '按总量'}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap">
+                    <a
+                      href={brand.affLink}
+                      target="_blank"
+                      rel="sponsored nofollow noopener noreferrer"
+                      class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#102343] hover:bg-emerald-700 text-white text-xs font-semibold"
+                    >
+                      前往购买
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const brandSel = document.getElementById('filter-brand') as HTMLSelectElement | null;
+    const cycleSel = document.getElementById('filter-cycle') as HTMLSelectElement | null;
+    const budgetSel = document.getElementById('filter-budget') as HTMLSelectElement | null;
+    const sortSel = document.getElementById('filter-sort') as HTMLSelectElement | null;
+    const resetBtn = document.getElementById('filter-reset');
+    const tbody = document.getElementById('comparison-tbody');
+    const countEl = document.getElementById('compare-count');
+
+    if (tbody) {
+      const rows = Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr'));
+
+      function applyFilters() {
+        const brandVal = brandSel?.value ?? 'all';
+        const cycleVal = cycleSel?.value ?? 'all';
+        const budgetVal = budgetSel?.value ?? 'all';
+        const sortVal = sortSel?.value ?? 'default';
+
+        const visible: HTMLTableRowElement[] = [];
+        for (const r of rows) {
+          const matchBrand = brandVal === 'all' || r.dataset.brand === brandVal;
+          const matchCycle = cycleVal === 'all' || r.dataset.cycle === cycleVal;
+          const matchBudget = budgetVal === 'all' || r.dataset.budget === budgetVal;
+          if (matchBrand && matchCycle && matchBudget) {
+            r.classList.remove('hidden');
+            visible.push(r);
+          } else {
+            r.classList.add('hidden');
+          }
+        }
+
+        const sorted = [...rows].sort((a, b) => {
+          if (sortVal === 'price-asc') return Number(a.dataset.price) - Number(b.dataset.price);
+          if (sortVal === 'monthly-asc') return Number(a.dataset.monthly) - Number(b.dataset.monthly);
+          if (sortVal === 'gb-asc') return Number(a.dataset.gb) - Number(b.dataset.gb);
+          return Number(a.dataset.idx) - Number(b.dataset.idx);
+        });
+        sorted.forEach((r) => tbody!.appendChild(r));
+
+        if (countEl) {
+          countEl.textContent = `当前匹配 ${visible.length} 档套餐（共 ${rows.length} 档）`;
+        }
+      }
+
+      [brandSel, cycleSel, budgetSel, sortSel].forEach((el) =>
+        el?.addEventListener('change', applyFilters)
+      );
+
+      resetBtn?.addEventListener('click', () => {
+        if (brandSel) brandSel.value = 'all';
+        if (cycleSel) cycleSel.value = 'all';
+        if (budgetSel) budgetSel.value = 'all';
+        if (sortSel) sortSel.value = 'default';
+        applyFilters();
+      });
+    }
+  </script>
+</BaseLayout>

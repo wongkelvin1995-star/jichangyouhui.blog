@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import CouponCard from '../../components/CouponCard.astro';
+import {
+  ACTIVE_CALCULABLE_COUPONS,
+  HISTORICAL_COUPONS,
+  RECORDED_COUPONS,
+} from '../../data/brands';
+import { buildBreadcrumbSchema, buildCollectionSchema } from '../../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '优惠码中心' }];
+const unconfirmedCoupons = RECORDED_COUPONS.filter((c) => !c.calculable);
+
+const schemas = [
+  buildCollectionSchema({
+    title: '2026 机场优惠码中心｜有效折扣码、使用限制与结算说明',
+    description:
+      '汇总 19 家机场品牌当前收录的优惠码与折扣活动，支持一键复制优惠码、查看适用套餐及新老用户限制，并归档历史已结束活动。',
+    path: '/coupons/',
+    items: RECORDED_COUPONS.map((c) => ({
+      name: `${c.brandName} 优惠码 ${c.code}`,
+      url: `/coupons/${c.brandSlug}/`,
+    })),
+  }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout
+  title="2026 机场优惠码中心｜有效折扣码、使用限制与一键复制｜机场优惠"
+  description="汇总 19 家机场品牌当前收录的优惠码与折扣活动，支持一键复制优惠码、查看适用套餐与排除规则，并单独归档已结束历史优惠。"
+  canonicalPath="/coupons/"
+  schemas={schemas}
+>
+  <section class="bg-band-coupons py-10 sm:py-14 border-b border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <div class="max-w-3xl">
+        <span class="inline-block px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold mb-3">
+          Coupon Center · 真实核对规则
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-4">
+          2026 机场优惠码中心
+        </h1>
+        <p class="text-base text-slate-600 leading-relaxed">
+          本站严格区分「已明确折扣比例的优惠码」与「仅收录代码、具体减免以结算页为准的优惠码」。无固定截止日期的活动不设置虚假倒计时；已结束或临时性历史优惠单独归档于页面底部。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Verified Discount Rate Coupons -->
+  <section id="active-coupons" class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-7">
+        <h2 class="text-2xl font-extrabold text-[#102343]">
+          已确认折扣比例的现行优惠码（{ACTIVE_CALCULABLE_COUPONS.length} 枚）
+        </h2>
+        <p class="text-sm text-slate-600 mt-1">
+          以下优惠码在品牌公开页或第三方核验档案中有明确的折扣比例说明，本站套餐表已据此同步计算理论折后价。
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {ACTIVE_CALCULABLE_COUPONS.map((coupon) => (
+          <CouponCard coupon={coupon} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Recorded Codes (Rate Verified at Checkout) -->
+  <section class="py-12 bg-[#F8FAFC] border-t border-slate-200/70">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-7">
+        <h2 class="text-2xl font-extrabold text-[#102343]">
+          已收录代码・具体折扣以结账页为准（{unconfirmedCoupons.length} 枚）
+        </h2>
+        <p class="text-sm text-slate-600 mt-1">
+          以下优惠码均源自 2026-11-25 品牌总索引及第三方公开汇总，但因公开资料未提供单一固定百分比（或存在多版本冲突），本站不推算未核实的折后价。点击复制后在官方结账页填写即可实时核对减免金额。
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {unconfirmedCoupons.map((coupon) => (
+          <CouponCard coupon={coupon} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Historical / Ended Coupons -->
+  {HISTORICAL_COUPONS.length > 0 && (
+    <section id="historical-coupons" class="py-12 bg-white border-t border-slate-200/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-7">
+          <span class="inline-block px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700 text-xs font-semibold mb-2">
+            历史归档・活动已结束
+          </span>
+          <h2 class="text-2xl font-extrabold text-[#102343]">
+            历史优惠活动归档（不作为当前有效优惠推荐）
+          </h2>
+          <p class="text-sm text-slate-600 mt-1">
+            下列记录为已结束的临时补偿活动或早期第三方历史代码对比归档，仅供价格溯源参考。
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {HISTORICAL_COUPONS.map((coupon) => (
+            <CouponCard coupon={coupon} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

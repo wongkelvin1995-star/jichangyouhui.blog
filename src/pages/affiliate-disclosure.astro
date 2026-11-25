@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_CONFIG } from '../data/site-config';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../utils/schema';
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '商业推广披露' }];
+const title = '商业推广与推广链接（AFF）披露声明｜机场优惠';
+const description =
+  '透明披露机场优惠（jichangyouhui.blog）的商业合作与推广佣金关系：包含 AFF 参数的购买链接不会增加用户支付成本。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/affiliate-disclosure/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/affiliate-disclosure/" schemas={schemas}>
+  <section class="bg-band-hero py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">商业推广与联盟佣金披露</h1>
+      <p class="text-base text-slate-600 leading-relaxed">
+        本页旨在向所有访问者公开说明本站的运营方式与外部购买链接中的商业推广关系。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-sm sm:text-base text-slate-700 leading-relaxed">
+      <div class="p-6 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">推广链接说明</h2>
+        <p>{SITE_CONFIG.disclosureShort}</p>
+        <p>
+          所有外部「前往购买」及「官网入口」按钮均明确添加了 <code>rel="sponsored nofollow noopener noreferrer"</code> 属性，以向读者及搜索引擎标明商业属性。
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-200 space-y-3">
+        <h2 class="text-xl font-bold text-[#102343]">对读者的影响与边界</h2>
+        <ul class="list-disc pl-5 space-y-2">
+          <li>通过推广链接注册不会提高您所购套餐的原始定价，也不会剥夺正常有效的优惠码权益。</li>
+          <li>不同品牌在推广佣金政策上的差异，不代表任何客观网络性能测试结果。</li>
+          <li>本站不对任何第三方机场的服务中断、条款变更或订单争议承担担保责任，购买前请仔细核对品牌当期服务条款。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

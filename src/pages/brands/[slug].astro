@@ -1,0 +1,617 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import BrandMark from '../../components/BrandMark.astro';
+import CouponCard from '../../components/CouponCard.astro';
+import PlanTable from '../../components/PlanTable.astro';
+import { ALL_BRANDS, getBrandBySlug, getBrandRank } from '../../data/brands';
+import { getBrandMinMonthlyStats, getPlansByBrand } from '../../data/plans';
+import { formatYuan, getPrimaryCalculableCoupon } from '../../utils/pricing';
+import { buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from '../../utils/schema';
+
+export function getStaticPaths() {
+  return ALL_BRANDS.map((b) => ({ params: { slug: b.slug } }));
+}
+
+const { slug } = Astro.params;
+const brand = getBrandBySlug(slug!);
+if (!brand) throw new Error(`Unknown brand slug: ${slug}`);
+
+const rank = getBrandRank(brand.slug);
+const brandPlans = getPlansByBrand(brand.slug);
+const stats = getBrandMinMonthlyStats(brand);
+const calculableCoupon = getPrimaryCalculableCoupon(brand.coupons);
+
+const regularPlans = brandPlans.filter((p) => p.plan.category === 'regular');
+const annualLitePlans = brandPlans.filter((p) => p.plan.category === 'annual_lite');
+const oneTimePlans = brandPlans.filter((p) => p.plan.category === 'one_time');
+const dedicatedPlans = brandPlans.filter((p) => p.plan.category === 'dedicated');
+
+// Cycle comparison across the lowest regular tier
+const firstTierName = regularPlans[0]?.plan.planName;
+const firstTierCycles = firstTierName
+  ? regularPlans.filter((p) => p.plan.planName === firstTierName)
+  : [];
+
+// Budget mapping within this brand
+const brandPeriodic = brandPlans.filter((p) => p.metrics.effectiveMonthlyAvg !== null);
+const budgetBuckets = [
+  {
+    label: '每月 ¥10 以下',
+    items: brandPeriodic.filter((p) => (p.metrics.effectiveMonthlyAvg ?? 999) <= 10),
+  },
+  {
+    label: '每月 ¥10–¥20',
+    items: brandPeriodic.filter(
+      (p) => (p.metrics.effectiveMonthlyAvg ?? 0) > 10 && (p.metrics.effectiveMonthlyAvg ?? 999) <= 20
+    ),
+  },
+  {
+    label: '每月 ¥20–¥30',
+    items: brandPeriodic.filter(
+      (p) => (p.metrics.effectiveMonthlyAvg ?? 0) > 20 && (p.metrics.effectiveMonthlyAvg ?? 999) <= 30
+    ),
+  },
+  {
+    label: '每月 ¥30–¥50',
+    items: brandPeriodic.filter(
+      (p) => (p.metrics.effectiveMonthlyAvg ?? 0) > 30 && (p.metrics.effectiveMonthlyAvg ?? 999) <= 50
+    ),
+  },
+  {
+    label: '每月 ¥50 以上',
+    items: brandPeriodic.filter((p) => (p.metrics.effectiveMonthlyAvg ?? 0) > 50),
+  },
+].filter((b) => b.items.length > 0);
+
+// Related articles
+const allArticles = await getCollection('articles', (e) => !e.data.draft);
+const relatedArticles = allArticles.filter(
+  (a) =>
+    a.data.brand === brand.slug ||
+    a.data.relatedBrands.includes(brand.slug)
+).slice(0, 6);
+
+const brandCoupons = brand.coupons.map((c) => ({
+  ...c,
+  brandAffLink: brand.affLink,
+  brandRank: rank,
+  brandTagline: brand.tagline,
+}));
+const activeCoupons = brandCoupons.filter((c) => c.status !== 'historical');
+
+const breadcrumbs = [
+  { label: '首页', href: '/' },
+  { label: '机场推荐', href: '/brands/' },
+  { label: brand.name },
+];
+
+const title = `${brand.name}（${brand.englishName}）套餐价格、优惠码与购买指南 2026｜机场优惠`;
+const description = `${brand.summary} 收录 ${brandPlans.length} 档套餐价格、优惠码 ${
+  activeCoupons[0]?.code ?? ''
+}、客户端兼容与售后条款分析。`;
+
+const schemas: Record<string, unknown>[] = [
+  buildWebPageSchema({
+    title,
+    description,
+    path: `/brands/${brand.slug}/`,
+    dateModified: brand.lastUpdatedDate,
+  }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+const faqSchema = buildFaqSchema(brand.faqs);
+if (faqSchema) schemas.push(faqSchema);
+
+const tocLinks = [
+  { id: 'overview', label: '1. 品牌简介与买前必知' },
+  { id: 'plans', label: '2. 全部套餐与付款周期' },
+  ...(activeCoupons.length ? [{ id: 'coupons', label: '3. 优惠码与折后成本分析' }] : []),
+  { id: 'traffic-budget', label: '4. 流量限制与预算推荐' },
+  { id: 'clients', label: '5. 支持设备、协议与客户端' },
+  { id: 'audience', label: '6. 适合人群与购买注意事项' },
+  { id: 'after-sales', label: '7. 续费、升级、售后与客观限制' },
+  ...(relatedArticles.length ? [{ id: 'related-articles', label: '8. 品牌深度文章' }] : []),
+  { id: 'faq', label: '9. 常见问题 FAQ' },
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath={`/brands/${brand.slug}/`} schemas={schemas}>
+  <!-- Hero Summary -->
+  <section class="bg-band-brands py-10 sm:py-14 border-b border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="flex items-start gap-4 max-w-3xl">
+            <BrandMark slug={brand.slug} name={brand.name} size="lg" />
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                  编辑展示 #{rank}（非测速排名）
+                </span>
+                <span class="text-xs text-slate-500">价格记录：{brand.priceRecordDate}</span>
+                <span class="text-xs text-slate-500">档案更新：{brand.lastUpdatedDate}</span>
+              </div>
+              <h1 class="text-2xl sm:text-4xl font-extrabold text-[#102343] mb-3">
+                {brand.name}（{brand.englishName}）套餐与优惠全解
+              </h1>
+              <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+                {brand.summary}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 lg:min-w-[230px]">
+            <a
+              href={brand.affLink}
+              target="_blank"
+              rel="sponsored nofollow noopener noreferrer"
+              class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold text-center shadow-xs transition-colors min-h-[44px] inline-flex items-center justify-center"
+            >
+              前往 {brand.name} 注册购买
+            </a>
+            {activeCoupons[0] && (
+              <button
+                type="button"
+                data-copy-code={activeCoupons[0].code}
+                class="px-5 py-3 rounded-xl bg-[#102343] hover:bg-slate-800 text-white text-sm font-semibold transition-colors min-h-[44px]"
+              >
+                复制优惠码：{activeCoupons[0].code}
+              </button>
+            )}
+            <a
+              href={`/plans/${brand.slug}/`}
+              class="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold text-center min-h-[40px] inline-flex items-center justify-center"
+            >
+              单独查看套餐价格表
+            </a>
+          </div>
+        </div>
+
+        <!-- Direct-Answer Top Metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="block text-xs text-slate-500">常规月付起步</span>
+            <span class="text-lg font-extrabold text-[#102343]">
+              {stats.lowestMonthly
+                ? `${formatYuan(stats.lowestMonthly.metrics.effectivePayable)}/月`
+                : '按年付/定制'}
+            </span>
+            {stats.lowestMonthly && (
+              <span class="block text-[11px] text-slate-500">
+                {stats.lowestMonthly.plan.planName} · {stats.lowestMonthly.plan.monthlyTrafficGB}GB
+              </span>
+            )}
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="block text-xs text-slate-500">年付最低门槛</span>
+            <span class="text-lg font-extrabold text-[#102343]">
+              {stats.lowestAnnual ? `${formatYuan(stats.lowestAnnual.metrics.effectivePayable)}/年` : '仅月付'}
+            </span>
+            {stats.lowestAnnual && (
+              <span class="block text-[11px] text-slate-500">
+                折合 {formatYuan(stats.lowestAnnual.metrics.effectiveMonthlyAvg ?? 0)}/月
+              </span>
+            )}
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="block text-xs text-slate-500">收录优惠码</span>
+            <span class="text-lg font-extrabold text-emerald-700">
+              {activeCoupons[0]?.code ?? '无公开码'}
+            </span>
+            <span class="block text-[11px] text-slate-500">
+              {activeCoupons[0]?.calculable ? activeCoupons[0].discountLabel : '结账页验证折扣'}
+            </span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="block text-xs text-slate-500">最低单 GB 标价</span>
+            <span class="text-lg font-extrabold text-[#102343]">
+              {stats.lowestCostPerGB?.metrics.effectiveCostPerGB
+                ? `${formatYuan(stats.lowestCostPerGB.metrics.effectiveCostPerGB)}/GB`
+                : '详见表内'}
+            </span>
+            <span class="block text-[11px] text-slate-500">
+              共 {brandPlans.length} 档套餐记录
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content + Sticky Anchor Sidebar -->
+  <section class="py-10 sm:py-12 bg-[#F8FAFC]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div class="lg:col-span-8 space-y-10">
+          <!-- Mobile TOC -->
+          <details class="lg:hidden bg-white rounded-2xl border border-slate-200 p-4">
+            <summary class="font-bold text-sm text-[#102343] cursor-pointer">
+              本页目录导航（点击展开）
+            </summary>
+            <nav class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 gap-1.5 text-sm">
+              {tocLinks.map((t) => (
+                <a href={`#${t.id}`} class="text-slate-600 hover:text-emerald-700 py-1">
+                  {t.label}
+                </a>
+              ))}
+            </nav>
+          </details>
+
+          <!-- 1 & 2. 品牌简介及购买前需要了解的基本信息 -->
+          <section id="overview" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-5">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+              一、{brand.name}品牌定位与买前核心信息
+            </h2>
+            <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+              <strong>品牌定位：</strong>{brand.positioning}。{brand.establishedNote}。本站并非 {brand.name} 官方网站，下文中展示的套餐规格与优惠规则均取自标注日期的公开档案与总索引资料，旨在协助读者在下单前算清总价、单 GB 成本与客户端门槛。
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
+                <p><strong>品牌别名：</strong>{[brand.englishName, ...brand.aliases].join(' / ')}</p>
+                <p><strong>网络线路：</strong>{brand.lineTypes.join('、')}</p>
+                <p><strong>传输协议：</strong>{brand.protocols.join('、')}</p>
+                <p><strong>支付方式：</strong>{brand.paymentMethods.join('、')}</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
+                <p><strong>覆盖地区：</strong>{brand.nodeRegions.join('、')}</p>
+                {brand.nodeCountNote && <p><strong>节点规模备注：</strong>{brand.nodeCountNote}</p>}
+                <p><strong>设备限制：</strong>{brand.deviceLimitSummary}</p>
+                {brand.officialSiteUrl && (
+                  <p class="break-all">
+                    <strong>展示站点：</strong>{brand.officialSiteUrl}
+                    {brand.officialSiteNote ? `（${brand.officialSiteNote}）` : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {brand.priceConflictNote && (
+              <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-900 leading-relaxed">
+                <strong>价格与版本差异说明：</strong>{brand.priceConflictNote}
+              </div>
+            )}
+          </section>
+
+          <!-- 3 & 4. 全部常规套餐与不同付款周期价格 -->
+          <section id="plans" class="space-y-6 scroll-mt-24">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-4">
+              <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+                二、{brand.name}全部套餐价格与不同付款周期对比
+              </h2>
+              <p class="text-sm text-slate-600 leading-relaxed">
+                下表完整列出 {brand.name} 共 {brandPlans.length} 条公开价格记录（来源日期：{brand.priceRecordDate}，币种：人民币 CNY）。{
+                  calculableCoupon
+                    ? `其中标注「有效折后价」的常规档位已按 ${calculableCoupon.code}（${calculableCoupon.discountLabel}）计算得出；年付轻量版、一次性包与独享定制均按原价列示。`
+                    : `因主优惠码未公布单一固定折扣率，下表暂按原价计算月均与每 GB 成本，结账时请输入优惠码核对实时减免。`
+                }
+              </p>
+
+              {regularPlans.length > 0 && (
+                <div class="space-y-2">
+                  <h3 class="text-base font-bold text-[#102343]">常规周期订阅套餐（{regularPlans.length} 档）</h3>
+                  <PlanTable plans={regularPlans} showBrandColumn={false} />
+                </div>
+              )}
+
+              {annualLitePlans.length > 0 && (
+                <div class="space-y-2 pt-4">
+                  <h3 class="text-base font-bold text-[#102343]">年付轻量 / 活动小包（{annualLitePlans.length} 档）</h3>
+                  <PlanTable plans={annualLitePlans} showBrandColumn={false} />
+                </div>
+              )}
+
+              {oneTimePlans.length > 0 && (
+                <div class="space-y-2 pt-4">
+                  <h3 class="text-base font-bold text-[#102343]">一次性不限时流量包（{oneTimePlans.length} 档）</h3>
+                  <p class="text-xs text-slate-500">
+                    注：一次性流量包无固定月度重置期限，按总量扣减至用完为止，故不强行折算为月均价格。
+                  </p>
+                  <PlanTable plans={oneTimePlans} showBrandColumn={false} />
+                </div>
+              )}
+
+              {dedicatedPlans.length > 0 && (
+                <div class="space-y-2 pt-4">
+                  <h3 class="text-base font-bold text-[#102343]">独享与私人定制方案（{dedicatedPlans.length} 档）</h3>
+                  <PlanTable plans={dedicatedPlans} showBrandColumn={false} />
+                </div>
+              )}
+            </div>
+          </section>
+
+          <!-- 5, 6, 7. 优惠码、折后价格与购买成本分析 -->
+          {activeCoupons.length > 0 && (
+            <section id="coupons" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-6">
+              <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+                三、当前优惠码、折后价格与付款周期成本分析
+              </h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {activeCoupons.map((c) => (
+                  <CouponCard coupon={c} />
+                ))}
+              </div>
+
+              {firstTierCycles.length > 1 && (
+                <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h3 class="text-base font-bold text-[#102343]">
+                    同一套餐不同付款周期成本拆解（以「{firstTierName}」为例）
+                  </h3>
+                  <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    对比同一流量规格下月付、季付、半年付与年付的整期应付及月均摊薄成本，可帮助您决定首次投入周期：
+                  </p>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {firstTierCycles.map((item) => {
+                      const monthBaseline = firstTierCycles.find((x) => x.plan.cycle === 'monthly');
+                      const compareRatio =
+                        monthBaseline && item.metrics.effectiveMonthlyAvg
+                          ? Math.round(
+                              (1 -
+                                item.metrics.effectiveMonthlyAvg /
+                                  (monthBaseline.metrics.effectiveMonthlyAvg ?? item.metrics.effectiveMonthlyAvg)) *
+                                100
+                            )
+                          : 0;
+                      return (
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs">
+                          <span class="font-bold text-[#102343]">{item.plan.cycleLabel}</span>
+                          <div class="text-base font-extrabold text-emerald-700 mt-0.5">
+                            {formatYuan(item.metrics.effectivePayable)}
+                          </div>
+                          <div class="text-slate-500 mt-0.5">
+                            月均 {formatYuan(item.metrics.effectiveMonthlyAvg ?? 0)}
+                            {compareRatio > 0 ? ` · 比月付省 ${compareRatio}%` : ''}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          <!-- 8 & 9. 流量额度限制与预算匹配 -->
+          <section id="traffic-budget" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-5">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+              四、流量额度规则与不同预算套餐推荐
+            </h2>
+            <div class="space-y-3 text-sm text-slate-700 leading-relaxed">
+              <p><strong>重置与结转规则：</strong>{brand.trafficResetSummary}</p>
+              <p><strong>节点倍率规则：</strong>{brand.multiplierSummary}</p>
+            </div>
+
+            {budgetBuckets.length > 0 && (
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {budgetBuckets.map((bucket) => (
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <h3 class="text-sm font-bold text-[#102343]">{bucket.label}</h3>
+                    <ul class="space-y-1.5 text-xs text-slate-700">
+                      {bucket.items.slice(0, 4).map((p) => (
+                        <li class="flex justify-between gap-2">
+                          <span>
+                            {p.plan.planName}（{p.plan.cycleLabel} · {p.plan.monthlyTrafficGB}GB/月）
+                          </span>
+                          <span class="font-semibold text-[#102343] shrink-0">
+                            月均 {formatYuan(p.metrics.effectiveMonthlyAvg ?? 0)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <!-- 10. 支持的设备、客户端及 AI/流媒体 -->
+          <section id="clients" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-5">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+              五、支持的设备、客户端政策与服务适配说明
+            </h2>
+            <p class="text-sm text-slate-700 leading-relaxed bg-indigo-50/70 p-4 rounded-xl border border-indigo-200/70">
+              <strong>第三方订阅开放政策：</strong>{brand.thirdPartySubscriptionPolicy}
+            </p>
+
+            <div class="table-scroll-wrap border border-slate-200 rounded-xl">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+                    <th class="py-3 px-4">系统 / 客户端</th>
+                    <th class="py-3 px-4">支持状态</th>
+                    <th class="py-3 px-4">使用与安装条件</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  {brand.clients.map((c) => (
+                    <tr>
+                      <td class="py-3 px-4 font-semibold text-[#102343] whitespace-nowrap">{c.platform}</td>
+                      <td class="py-3 px-4 text-emerald-800 font-medium whitespace-nowrap">{c.supportStatus}</td>
+                      <td class="py-3 px-4 text-slate-600">{c.condition}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {brand.aiSupport.length > 0 && (
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <h3 class="text-sm font-bold text-[#102343] mb-2">AI 工具支持说明（资料标注）</h3>
+                  <ul class="space-y-1.5 text-xs text-slate-600">
+                    {brand.aiSupport.map((a) => (
+                      <li><strong>{a.platform}：</strong>{a.note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {brand.streamingSupport.length > 0 && (
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <h3 class="text-sm font-bold text-[#102343] mb-2">流媒体支持说明（资料标注）</h3>
+                  <ul class="space-y-1.5 text-xs text-slate-600">
+                    {brand.streamingSupport.map((s) => (
+                      <li><strong>{s.platform}：</strong>{s.note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <!-- 11 & 12. 适合人群与购买注意事项 -->
+          <section id="audience" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-5">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+              六、适合人群与不适合人群分析
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="p-5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
+                <h3 class="text-base font-bold text-emerald-900 mb-3">推荐优先考虑的人群</h3>
+                <ul class="space-y-2 text-sm text-slate-700 list-disc pl-5">
+                  {brand.suitableFor.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div class="p-5 rounded-xl bg-slate-50 border border-slate-200">
+                <h3 class="text-base font-bold text-[#102343] mb-3">购买前需慎重评估的人群</h3>
+                <ul class="space-y-2 text-sm text-slate-700 list-disc pl-5">
+                  {brand.notSuitableFor.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 13 & 14. 续费、升级、售后规则与优势/局限 -->
+          <section id="after-sales" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24 space-y-5">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343]">
+              七、续费、升级、售后规则与客观局限
+            </h2>
+            <div class="space-y-3 text-sm text-slate-700 leading-relaxed">
+              <p><strong>退款与升级政策：</strong>{brand.refundAndUpgradePolicy}</p>
+              <p><strong>客服与支持渠道：</strong>{brand.customerServiceNote}</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+              <div>
+                <h3 class="text-sm font-bold text-[#102343] mb-2">资料支持的客观特点</h3>
+                <ul class="space-y-2 text-xs sm:text-sm text-slate-700 list-disc pl-5">
+                  {brand.pros.map((p) => (
+                    <li>{p}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-[#102343] mb-2">已知限制与核对提醒</h3>
+                <ul class="space-y-2 text-xs sm:text-sm text-slate-700 list-disc pl-5">
+                  {brand.limitations.map((l) => (
+                    <li>{l}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 15. 品牌相关深度文章 -->
+          {relatedArticles.length > 0 && (
+            <section id="related-articles" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24">
+              <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343] mb-4">
+                八、{brand.name}相关深度攻略文章
+              </h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {relatedArticles.map((art) => (
+                  <a
+                    href={`/articles/${art.data.slug ?? art.id}/`}
+                    class="p-4 rounded-xl border border-slate-200 hover:border-emerald-300 bg-slate-50/70 transition-colors block"
+                  >
+                    <span class="text-[11px] font-semibold text-indigo-700">{art.data.category}</span>
+                    <h3 class="font-bold text-sm text-[#102343] mt-1 mb-1.5">{art.data.title}</h3>
+                    <p class="text-xs text-slate-600 line-clamp-2">{art.data.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <!-- 16. FAQ -->
+          <section id="faq" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 scroll-mt-24">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#102343] mb-4">
+              九、{brand.name}常见问题（FAQ）
+            </h2>
+            <div class="space-y-3">
+              {brand.faqs.map((faq) => (
+                <details class="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
+                  <summary class="font-bold text-sm text-[#102343] cursor-pointer">{faq.question}</summary>
+                  <p class="mt-2.5 text-sm text-slate-600 leading-relaxed">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <!-- Sources -->
+          <footer class="rounded-2xl border border-slate-200 bg-white p-5 text-xs text-slate-600 space-y-1.5">
+            <p class="font-bold text-slate-800">本页资料依据与更新时间</p>
+            <ul class="list-disc pl-5 space-y-1">
+              {brand.sources.map((s) => (
+                <li>
+                  {s.label}（{s.date}）：{s.note}
+                </li>
+              ))}
+            </ul>
+          </footer>
+        </div>
+
+        <!-- Desktop Sticky Sidebar -->
+        <aside class="hidden lg:block lg:col-span-4 sticky top-24 space-y-5">
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+            <h2 class="text-sm font-bold text-[#102343] pb-2 border-b border-slate-100">
+              页面章节导航
+            </h2>
+            <nav class="space-y-1.5 text-sm">
+              {tocLinks.map((t) => (
+                <a href={`#${t.id}`} class="block py-1 text-slate-600 hover:text-emerald-700">
+                  {t.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div class="bg-[#102343] text-white rounded-2xl p-5 space-y-3">
+            <h2 class="text-base font-bold text-white">{brand.name} 购买入口</h2>
+            {activeCoupons[0] && (
+              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between gap-2">
+                <div>
+                  <span class="block text-[11px] text-slate-400">优惠码</span>
+                  <code class="text-sm font-bold text-emerald-400">{activeCoupons[0].code}</code>
+                </div>
+                <button
+                  type="button"
+                  data-copy-code={activeCoupons[0].code}
+                  class="px-3 py-1.5 rounded-lg bg-white text-[#102343] text-xs font-bold"
+                >
+                  复制
+                </button>
+              </div>
+            )}
+            <a
+              href={brand.affLink}
+              target="_blank"
+              rel="sponsored nofollow noopener noreferrer"
+              class="block w-full text-center py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors"
+            >
+              前往注册与选购 →
+            </a>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              推广披露：此链接含本站合作推广代码（{brand.affCode}），不影响您的结账原价与折扣资格。
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

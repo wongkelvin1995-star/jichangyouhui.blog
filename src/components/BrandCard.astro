@@ -1,0 +1,137 @@
+---
+import type { BrandData } from '../types/airport';
+import { getBrandRank } from '../data/brands';
+import { getBrandMinMonthlyStats } from '../data/plans';
+import { formatYuan, getPrimaryCalculableCoupon } from '../utils/pricing';
+import BrandMark from './BrandMark.astro';
+
+interface Props {
+  brand: BrandData;
+}
+
+const { brand } = Astro.props;
+const rank = getBrandRank(brand.slug);
+const stats = getBrandMinMonthlyStats(brand);
+const primaryCoupon = getBrandMinMonthlyStats(brand)
+  ? getPrimaryCalculableCoupon(brand.coupons)
+  : null;
+const displayCoupon = primaryCoupon ?? brand.coupons[0];
+---
+
+<article class="bento-card p-5 sm:p-6 flex flex-col justify-between gap-4">
+  <div class="space-y-3.5">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <BrandMark slug={brand.slug} name={brand.name} />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-lg font-bold text-[#102343]">
+              <a href={`/brands/${brand.slug}/`} class="hover:text-emerald-700 transition-colors">
+                {brand.name}
+              </a>
+            </h3>
+            <span class="text-xs text-slate-400 font-medium">{brand.englishName}</span>
+          </div>
+          <span class="inline-block mt-0.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+            编辑展示 #{rank} · 收录 {stats.totalPlanCount} 档套餐
+          </span>
+        </div>
+      </div>
+
+      {displayCoupon && (
+        <a
+          href={`/coupons/${brand.slug}/`}
+          class={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+            displayCoupon.calculable
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+          }`}
+        >
+          码：{displayCoupon.code}
+        </a>
+      )}
+    </div>
+
+    <p class="text-sm text-slate-600 leading-relaxed line-clamp-2">{brand.tagline}</p>
+
+    <!-- Key Metrics Grid -->
+    <div class="grid grid-cols-2 gap-2.5 pt-1">
+      <div class="rounded-xl bg-slate-50 p-3 border border-slate-100">
+        <span class="block text-[11px] text-slate-500">常规月付起步</span>
+        {stats.lowestMonthly ? (
+          <div class="mt-0.5">
+            <span class="text-base font-bold text-[#102343]">
+              {formatYuan(stats.lowestMonthly.metrics.effectivePayable)}
+            </span>
+            <span class="text-xs text-slate-500"> / 月</span>
+            {stats.lowestMonthly.metrics.hasConfirmedDiscount && (
+              <span class="block text-[11px] text-emerald-700">
+                原价 {formatYuan(stats.lowestMonthly.plan.originalPrice)} · {stats.lowestMonthly.plan.monthlyTrafficGB}GB
+              </span>
+            )}
+            {!stats.lowestMonthly.metrics.hasConfirmedDiscount && (
+              <span class="block text-[11px] text-slate-500">
+                {stats.lowestMonthly.plan.monthlyTrafficGB}GB/月
+              </span>
+            )}
+          </div>
+        ) : (
+          <span class="text-sm font-semibold text-slate-700">详见套餐页</span>
+        )}
+      </div>
+
+      <div class="rounded-xl bg-slate-50 p-3 border border-slate-100">
+        <span class="block text-[11px] text-slate-500">年付最低折算</span>
+        {stats.lowestAnnual ? (
+          <div class="mt-0.5">
+            <span class="text-base font-bold text-[#102343]">
+              {formatYuan(stats.lowestAnnual.metrics.effectivePayable)}
+            </span>
+            <span class="text-xs text-slate-500"> / 年</span>
+            <span class="block text-[11px] text-slate-500">
+              月均 {formatYuan(stats.lowestAnnual.metrics.effectiveMonthlyAvg ?? 0)} · {stats.lowestAnnual.plan.monthlyTrafficGB}GB/月
+            </span>
+          </div>
+        ) : (
+          <span class="text-sm font-semibold text-slate-700">按月付计费</span>
+        )}
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-1.5">
+      {brand.lineTypes.slice(0, 2).map((line) => (
+        <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px]">
+          {line}
+        </span>
+      ))}
+      {brand.protocols.slice(0, 2).map((proto) => (
+        <span class="px-2 py-0.5 rounded-md bg-indigo-50/70 text-indigo-700 text-[11px]">
+          {proto}
+        </span>
+      ))}
+    </div>
+  </div>
+
+  <div class="pt-3 border-t border-slate-100 flex items-center gap-2 flex-wrap">
+    <a
+      href={`/brands/${brand.slug}/`}
+      class="flex-1 min-w-[110px] inline-flex items-center justify-center px-3.5 py-2.5 rounded-xl bg-[#102343] hover:bg-slate-800 text-white text-xs font-semibold transition-colors min-h-[44px]"
+    >
+      品牌详情与分析
+    </a>
+    <a
+      href={`/plans/${brand.slug}/`}
+      class="inline-flex items-center justify-center px-3 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 text-xs font-medium transition-colors min-h-[44px]"
+    >
+      套餐明细
+    </a>
+    <a
+      href={brand.affLink}
+      target="_blank"
+      rel="sponsored nofollow noopener noreferrer"
+      class="inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition-colors min-h-[44px]"
+    >
+      官网入口
+    </a>
+  </div>
+</article>

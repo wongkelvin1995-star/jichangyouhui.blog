@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<!-- 将此文件复制为 public/BingSiteAuth.xml 并替换为 Bing Webmaster Tools 提供的专属验证串 -->
+<users>
+	<user>REPLACE_WITH_YOUR_BING_WEBMASTER_AUTH_TOKEN</user>
+</users>

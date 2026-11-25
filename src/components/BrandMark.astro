@@ -1,0 +1,52 @@
+---
+interface Props {
+  slug: string;
+  name: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { slug, name, size = 'md' } = Astro.props;
+
+const paletteMap: Record<string, { bg: string; fg: string; accent: string }> = {
+  lingdongyun: { bg: '#EEF2FF', fg: '#312E81', accent: '#6366F1' },
+  'muguang-jiasu': { bg: '#ECFDF5', fg: '#065F46', accent: '#10B981' },
+  breezenet: { bg: '#E0F2FE', fg: '#0C4A6E', accent: '#0284C7' },
+  feimaoyun: { bg: '#FEF3C7', fg: '#78350F', accent: '#D97706' },
+  dalaoyun: { bg: '#F1F5F9', fg: '#102343', accent: '#10B981' },
+  yinxingren: { bg: '#F3E8FF', fg: '#4C1D95', accent: '#7C3AED' },
+  flyv: { bg: '#DBEAFE', fg: '#1E3A8A', accent: '#2563EB' },
+  wavenet: { bg: '#CCFBF1', fg: '#134E4A', accent: '#0D9488' },
+  wuyou: { bg: '#DCFCE7', fg: '#14532D', accent: '#16A34A' },
+  firefly: { bg: '#FFEDD5', fg: '#7C2D12', accent: '#EA580C' },
+  quanqiuyun: { bg: '#E0E7FF', fg: '#1E1B4B', accent: '#4F46E5' },
+  v2yun: { bg: '#FCE7F3', fg: '#831843', accent: '#DB2777' },
+  lingmao: { bg: '#F5F3FF', fg: '#3B0764', accent: '#6366F1' },
+  flashleap: { bg: '#ECFDF5', fg: '#064E3B', accent: '#059669' },
+  laddercloud: { bg: '#F1F5F9', fg: '#0F172A', accent: '#475569' },
+  lightspeed: { bg: '#E0F2FE', fg: '#102343', accent: '#0EA5E9' },
+  u1s1: { bg: '#FEF9C3', fg: '#713F12', accent: '#CA8A04' },
+  sogoyun: { bg: '#EDE9FE', fg: '#4C1D95', accent: '#8B5CF6' },
+  kuajie: { bg: '#D1FAE5', fg: '#065F46', accent: '#10B981' },
+};
+
+const colors = paletteMap[slug] ?? { bg: '#F1F5F9', fg: '#102343', accent: '#10B981' };
+const sizeClass =
+  size === 'lg'
+    ? 'w-14 h-14 text-xl rounded-2xl'
+    : size === 'sm'
+      ? 'w-9 h-9 text-sm rounded-lg'
+      : 'w-11 h-11 text-base rounded-xl';
+const char = name.slice(0, 2);
+---
+
+<span
+  class={`inline-flex items-center justify-center font-bold tracking-tight shrink-0 border border-slate-200/80 relative overflow-hidden ${sizeClass}`}
+  style={`background-color: ${colors.bg}; color: ${colors.fg};`}
+  aria-hidden="true"
+>
+  <span
+    class="absolute top-0 right-0 w-2.5 h-2.5 rounded-bl-md"
+    style={`background-color: ${colors.accent}; opacity: 0.75;`}
+  ></span>
+  {char}
+</span>

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PlanTable from '../../components/PlanTable.astro';
+import { getAnnualDeals } from '../../data/plans';
+import { buildBreadcrumbSchema, buildWebPageSchema } from '../../utils/schema';
+
+const allAnnual = getAnnualDeals();
+const liteAnnual = allAnnual.filter((p) => p.plan.category === 'annual_lite');
+const regularAnnual = allAnnual.filter((p) => p.plan.category === 'regular');
+
+const breadcrumbs = [{ label: '首页', href: '/' }, { label: '年付优惠专区' }];
+const title = '2026 机场年付优惠大全｜百元以下年付小包与长周期折算对比｜机场优惠';
+const description =
+  '汇总全部 19 家机场品牌的年付轻量小包（¥79–¥137/年）与常规套餐年付折后价，对比月均成本与预付风险提示。';
+
+const schemas = [
+  buildWebPageSchema({ title, description, path: '/annual-deals/', dateModified: '2026-11-25' }),
+  buildBreadcrumbSchema(breadcrumbs),
+];
+---
+
+<BaseLayout title={title} description={description} canonicalPath="/annual-deals/" schemas={schemas}>
+  <section class="bg-band-brands py-10 sm:py-14 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-[#102343] mb-3">
+        2026 机场年付优惠与长周期汇总
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
+        年付方案主要分为两类：第一类是专为轻度用户设计的「年付轻量/活动小包」（40GB–100GB/月，多不参与优惠码）；第二类是常规月付套餐选择按年预付（通常自带 8–85 折，部分品牌还可叠加新人优惠码）。
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-900">
+        <strong>预付风险提示：</strong>绝大多数机场不提供年付订单中途按比例无条件退款。如果您尚未使用过目标品牌，强烈建议先买月付档位实测本地网络与客户端兼容度，再决定是否切换年付。
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-bold text-[#102343] mb-2">
+          一、年付轻量 / 活动小包汇总（{liteAnnual.length} 档）
+        </h2>
+        <p class="text-sm text-slate-600 mb-4">
+          整年实付 ¥79–¥137，每月提供 40GB–100GB 独立配额（每月重置不结转）。
+        </p>
+        <PlanTable plans={liteAnnual} />
+      </div>
+
+      <div>
+        <h2 class="text-2xl font-bold text-[#102343] mb-2">
+          二、常规套餐年付档位与可用码折后对比（{regularAnnual.length} 档）
+        </h2>
+        <PlanTable plans={regularAnnual} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>
